@@ -9,7 +9,7 @@ from typing import Annotated
 from uuid import uuid4
 
 import httpx
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, Header, Query, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -19,7 +19,8 @@ from starlette.exceptions import HTTPException
 from .gateway import Gateway, GatewayError
 from .schemas import ChatRequest, ChatResponse, EmbeddingRequest, EmbeddingResponse, ModelConfig
 from .schemas import Message, ModelTestRequest, ModelTestResponse
-from .store import ModelStore
+from .schemas import ModelView
+from .store import ConfigurationConflict, ModelStore
 
 
 @dataclass
@@ -200,23 +201,77 @@ def create_app(settings: Settings | None = None, transport=None):
         )
 
     @app.get(
-        "/api/v1/admin/models", dependencies=[Depends(admin_auth)], response_model=list[ModelConfig]
+        "/api/v1/admin/models", dependencies=[Depends(admin_auth)], response_model=list[ModelView]
     )
     def admin_models(request: Request):
-        return request.app.state.gateway.store.list()
+        store = request.app.state.gateway.store
+        return [{**m.model_dump(), "etag": store.etag(m)} for m in store.list()]
+
+    @app.get(
+        "/api/v1/admin/models/{alias}", dependencies=[Depends(admin_auth)], response_model=ModelView
+    )
+    def get_model(alias: str, request: Request, response: Response):
+        store = request.app.state.gateway.store
+        config = store.get(alias)
+        if config is None:
+            raise GatewayError(404, "model_not_found", "Model does not exist")
+        response.headers["ETag"] = store.etag(config)
+        return {**config.model_dump(), "etag": store.etag(config)}
 
     @app.put(
         "/api/v1/admin/models/{alias}",
         dependencies=[Depends(admin_auth)],
-        response_model=ModelConfig,
+        response_model=ModelView,
     )
-    def put_model(alias: str, config: ModelConfig, request: Request):
+    def put_model(
+        alias: str,
+        config: ModelConfig,
+        request: Request,
+        response: Response,
+        if_match: Annotated[str | None, Header()] = None,
+        if_none_match: Annotated[str | None, Header()] = None,
+    ):
         if alias != config.alias:
             raise GatewayError(422, "alias_mismatch", "Path and body aliases must match")
         gateway = request.app.state.gateway
         gateway.check_host(config)
-        gateway.store.put(config, actor="platform_admin", request_id=request.state.request_id)
-        return config
+        if if_match is None and if_none_match is None:
+            raise GatewayError(
+                428,
+                "precondition_required",
+                "Use If-None-Match: * to create, or If-Match with the saved ETag to update",
+            )
+        if (
+            (if_match is not None and if_none_match is not None)
+            or (if_none_match is not None and if_none_match != "*")
+            or (
+                if_match is not None
+                and (
+                    len(if_match) != 66
+                    or not if_match.startswith('"')
+                    or not if_match.endswith('"')
+                    or any(c not in "0123456789abcdef" for c in if_match[1:-1])
+                )
+            )
+        ):
+            raise GatewayError(
+                422, "invalid_precondition", "Supply one exact strong ETag or If-None-Match: *"
+            )
+        try:
+            gateway.store.put(
+                config,
+                expected_etag=if_match or "*",
+                actor="platform_admin",
+                request_id=request.state.request_id,
+            )
+        except ConfigurationConflict:
+            raise GatewayError(
+                412,
+                "configuration_conflict",
+                "Configuration changed or alias already exists; reload before saving",
+            ) from None
+        response.headers["ETag"] = gateway.store.etag(config)
+        return {**config.model_dump(), "etag": gateway.store.etag(config)}
 
     @app.get("/api/v1/models", dependencies=[Depends(client_auth)])
     def models(request: Request):

@@ -1,9 +1,14 @@
 import sqlite3
 import json
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .schemas import ModelConfig
+
+
+class ConfigurationConflict(Exception):
+    """The configuration no longer matches the caller's snapshot."""
 
 
 class ModelStore:
@@ -41,14 +46,33 @@ class ModelStore:
             row = db.execute("SELECT config FROM models WHERE alias = ?", (alias,)).fetchone()
         return ModelConfig.model_validate_json(row[0]) if row else None
 
-    def put(self, config: ModelConfig, *, actor: str = "system", request_id: str | None = None):
+    @staticmethod
+    def etag(config: ModelConfig) -> str:
+        # Revalidate defaults too: a float default of 60 must hash like persisted 60.0.
+        normalized = ModelConfig.model_validate(config.model_dump()).model_dump(mode="json")
+        canonical = json.dumps(normalized, sort_keys=True, separators=(",", ":"))
+        return '"' + hashlib.sha256(canonical.encode()).hexdigest() + '"'
+
+    def put(
+        self,
+        config: ModelConfig,
+        *,
+        expected_etag: str = "*",
+        actor: str = "system",
+        request_id: str | None = None,
+    ):
         with self.connect() as db:
             # Serialize read/modify/audit so the event matches the actual previous value.
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
                 "SELECT config FROM models WHERE alias = ?", (config.alias,)
             ).fetchone()
-            previous = ModelConfig.model_validate_json(row[0]).model_dump() if row else {}
+            previous_model = ModelConfig.model_validate_json(row[0]) if row else None
+            if (row and expected_etag != self.etag(previous_model)) or (
+                not row and expected_etag != "*"
+            ):
+                raise ConfigurationConflict()
+            previous = previous_model.model_dump() if row else {}
             current = config.model_dump()
             changed = sorted(key for key, value in current.items() if previous.get(key) != value)
             if row and not changed:

@@ -10,6 +10,7 @@ let testing = false;
 let auditBefore = null;
 let auditSerial = 0;
 let auditAlias = "";
+let editingEtag = null;
 const pending = new Set();
 
 function notice(message, error = false) {
@@ -25,12 +26,13 @@ async function api(path, options = {}) {
   try {
     const response = await fetch(`/api/v1/admin${path}`, {
       ...options, signal: controller.signal,
-      headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: { ...options.headers, "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
     });
     const data = await response.json();
     if (current !== epoch) throw new DOMException("Session ended", "AbortError");
     if (!response.ok) {
       const fields = data.error?.fields?.join(", ");
+      if (data.error?.code === "configuration_conflict") throw new Error("配置已被修改，或该别名已存在。你的表单内容已保留，请刷新列表并重新点击编辑，核对最新配置后再保存。\n请求 ID：" + data.request_id);
       throw new Error(`${data.error?.message || "请求失败"}${fields ? ` · ${fields}` : ""} [${data.error?.code || response.status}]\n请求 ID：${data.request_id || "—"}`);
     }
     return data;
@@ -91,9 +93,10 @@ function renderModels() {
     const toggle = node("button", model.enabled ? "禁用" : "启用", "text-button");
     toggle.type = "button";
     toggle.addEventListener("click", () => action(toggle, async () => {
-      await api(`/models/${encodeURIComponent(model.alias)}`, { method: "PUT", body: JSON.stringify({ ...model, enabled: !model.enabled }) });
+      const { etag, ...config } = model;
+      await api(`/models/${encodeURIComponent(model.alias)}`, { method: "PUT", headers: { "If-Match": etag }, body: JSON.stringify({ ...config, enabled: !model.enabled }) });
       await refresh();
-      if (field("alias").value === model.alias) field("enabled").checked = !model.enabled;
+      // Keep any open editor's snapshot unchanged; saving it must detect this change.
       notice(`模型 ${model.alias} 已${model.enabled ? "禁用" : "启用"}。`);
     }));
     actions.append(edit, test, toggle);
@@ -156,6 +159,7 @@ function providerFields() {
 }
 
 function resetModel() {
+  editingEtag = null;
   modelForm.reset();
   field("alias").readOnly = false;
   byId("editor-title").textContent = "添加模型";
@@ -164,6 +168,7 @@ function resetModel() {
 
 function editModel(model) {
   resetModel();
+  editingEtag = model.etag;
   for (const [key, value] of Object.entries(model)) {
     if (key === "capabilities") continue;
     const input = field(key);
@@ -234,7 +239,8 @@ modelForm.addEventListener("submit", (event) => {
     if (!config.capabilities.length) throw new Error("至少选择一种模型能力。");
     for (const name of ["max_output_tokens", "timeout_seconds"]) config[name] = Number(field(name).value);
     for (const name of ["enabled", "supports_temperature"]) config[name] = field(name).checked;
-    const saved = await api(`/models/${encodeURIComponent(config.alias)}`, { method: "PUT", body: JSON.stringify(config) });
+    const headers = editingEtag ? { "If-Match": editingEtag } : { "If-None-Match": "*" };
+    const saved = await api(`/models/${encodeURIComponent(config.alias)}`, { method: "PUT", headers, body: JSON.stringify(config) });
     await refresh();
     editModel(saved);
     notice(`模型 ${saved.alias} 已保存。可在右侧发送测试请求验证能力。`);

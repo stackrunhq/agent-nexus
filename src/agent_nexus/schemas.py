@@ -48,6 +48,10 @@ class ModelConfig(StrictModel):
         return self
 
 
+class ModelView(ModelConfig):
+    etag: str
+
+
 class Message(StrictModel):
     role: Literal["system", "user", "assistant"]
     content: str = Field(min_length=1, max_length=32000)

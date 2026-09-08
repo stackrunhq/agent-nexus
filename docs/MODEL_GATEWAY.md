@@ -24,6 +24,7 @@ capabilities 为管理员声明，须真实联调验证。cloud/local 是部署�
 | GET /health/ready | 无 | 数据库可访问，不代表模型可用 |
 | GET /api/v1/admin/models | 管理员 | 配置列表，不含密钥 |
 | GET /api/v1/admin/settings | 管理员 | 查看部署允许的模型主机 |
+| GET /api/v1/admin/models/{alias} | 管理员 | 读取单个配置及 ETag，包括已禁用配置 |
 | GET /api/v1/admin/audit-events | 管理员 | 配置变更审计，按 alias 筛选，before 游标分页 |
 | PUT /api/v1/admin/models/{alias} | 管理员 | 创建、更新、禁用 |
 | POST /api/v1/admin/models/{alias}/test | 管理员 | 真实对话或向量测试，返回耗时与归一化结果 |
@@ -62,6 +63,16 @@ Content-Type: application/json
 总时限覆盖接收完整响应；超过 timeout_seconds 返回 504。读取上游时累计限制解码后的响应为 8 MiB，超限返回 502 provider_response_too_large。畸形嵌套字段返回 502，不透传上游正文。
 
 ## 安全边界
+
+### 配置并发保护（管理写入接口变更）
+
+新建配置的 PUT 请求必须携带 `If-None-Match: *`；更新时先读取配置，携带返回的 `etag` 作为 `If-Match` 请求头。列表、单个详情及保存结果都包含 etag，单个详情和保存响应还提供 ETag 头。提交 JSON 时去掉只读 etag 字段。
+
+缺少条件头返回 428 precondition_required；快照不匹配、创建同名配置或更新不存在配置返回 412 configuration_conflict；同时提供两种条件、弱 ETag、多值或非法条件返回 422。本接口只接受单个精确强 ETag，不支持 If-Match 通配符。
+
+检查和配置/审计写入位于同一写事务。冲突不更新配置、不新增审计；相同配置保存不改变 ETag。ETag 是规范化配置的内容摘要，不是递增历史版本；配置恢复到相同内容会有相同 ETag。
+
+工作台自动管理条件头。冲突时保留表单，用户刷新列表后重新编辑；不会自动重试覆盖。旧的管理 API 客户端需要补上条件头，普通对话/向量接口不受影响。既有数据库无需迁移。
 
 模型配置保存与审计写入同一事务，审计失败则更新回滚。审计只记录变更字段名，不保存字段值、密钥或提示词。相同配置重复保存不产生事件，既有配置不补造历史。操作者目前为共享管理员类别 platform_admin（内部调用为 system），后续接入用户体系后替换为可信用户 ID。
 

@@ -38,7 +38,13 @@ def register(client, provider="openai_compatible", **overrides):
         "capabilities": ["chat", "embeddings"],
     }
     config.update(overrides)
-    return client.put("/api/v1/admin/models/help", headers=ADMIN, json=config)
+    existing = client.get("/api/v1/admin/models/help", headers=ADMIN)
+    condition = (
+        {"If-Match": existing.json()["etag"]}
+        if existing.status_code == 200
+        else {"If-None-Match": "*"}
+    )
+    return client.put("/api/v1/admin/models/help", headers={**ADMIN, **condition}, json=config)
 
 
 def chat(client, **overrides):
@@ -331,6 +337,7 @@ def test_old_configuration_gets_compatible_defaults(setup):
     client, _, _, settings = setup
     response = register(client)
     legacy = response.json()
+    del legacy["etag"]
     del legacy["token_parameter"]
     del legacy["supports_temperature"]
     with sqlite3.connect(settings.database_path) as db:
@@ -408,3 +415,85 @@ def test_audit_survives_restart_and_rejected_changes_leave_no_event(setup):
     with TestClient(create_app(settings)) as restarted:
         events = restarted.get("/api/v1/admin/audit-events", headers=ADMIN).json()["data"]
     assert len(events) == 1
+
+
+def test_stale_editor_cannot_overwrite_or_append_audit(setup):
+    client, _, _, _ = setup
+    first = register(client)
+    snapshot = first.json()
+    tag = snapshot.pop("etag")
+    assert first.headers["etag"] == tag
+    assert client.get("/api/v1/admin/models/help", headers=ADMIN).headers["etag"] == tag
+    second = register(client, model="new-model")
+    assert second.json()["etag"] != tag
+    stale = client.put(
+        "/api/v1/admin/models/help",
+        headers={**ADMIN, "If-Match": tag},
+        json={**snapshot, "enabled": False},
+    )
+    assert stale.status_code == 412
+    assert stale.json()["error"]["code"] == "configuration_conflict"
+    current = client.get("/api/v1/admin/models/help", headers=ADMIN).json()
+    assert current["model"] == "new-model" and current["enabled"]
+    assert len(client.get("/api/v1/admin/audit-events", headers=ADMIN).json()["data"]) == 2
+
+
+def test_creation_preconditions_and_missing_headers(setup):
+    client, _, _, _ = setup
+    response = register(client)
+    body = response.json()
+    tag = body.pop("etag")
+    path = "/api/v1/admin/models/help"
+    assert client.put(path, headers=ADMIN, json=body).status_code == 428
+    assert client.put(path, headers={**ADMIN, "If-None-Match": "*"}, json=body).status_code == 412
+    for condition in (
+        {"If-Match": "*"},
+        {"If-Match": "W/" + tag},
+        {"If-None-Match": tag},
+        {"If-Match": tag, "If-None-Match": "*"},
+    ):
+        assert client.put(path, headers={**ADMIN, **condition}, json=body).status_code == 422
+    assert client.get(path, headers=CLIENT).status_code == 401
+    assert client.get("/api/v1/admin/models/missing", headers=ADMIN).status_code == 404
+    body["alias"] = "missing"
+    assert (
+        client.put(
+            "/api/v1/admin/models/missing", headers={**ADMIN, "If-Match": tag}, json=body
+        ).status_code
+        == 412
+    )
+
+
+def test_identical_save_preserves_etag_and_audit(setup):
+    client, _, _, _ = setup
+    first = register(client)
+    second = register(client)
+    assert first.json()["etag"] == second.json()["etag"]
+    assert len(client.get("/api/v1/admin/audit-events", headers=ADMIN).json()["data"]) == 1
+
+
+def test_simultaneous_writers_have_one_winner(setup):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    from agent_nexus.schemas import ModelConfig
+    from agent_nexus.store import ConfigurationConflict, ModelStore
+
+    client, _, _, settings = setup
+    original = register(client).json()
+    tag = original.pop("etag")
+    barrier = Barrier(2)
+
+    def write(name):
+        store = ModelStore(settings.database_path)
+        barrier.wait(timeout=5)
+        try:
+            store.put(ModelConfig(**{**original, "model": name}), expected_etag=tag)
+            return "saved"
+        except ConfigurationConflict:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(write, ["model-a", "model-b"]))
+    assert sorted(results) == ["conflict", "saved"]
+    assert len(client.get("/api/v1/admin/audit-events", headers=ADMIN).json()["data"]) == 2
