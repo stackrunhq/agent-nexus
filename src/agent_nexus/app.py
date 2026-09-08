@@ -9,7 +9,7 @@ from typing import Annotated
 from uuid import uuid4
 
 import httpx
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -164,6 +164,15 @@ def create_app(settings: Settings | None = None, transport=None):
     def admin_settings():
         return {"allowed_hosts": sorted(settings.allowed_hosts)}
 
+    @app.get("/api/v1/admin/audit-events", dependencies=[Depends(admin_auth)])
+    def audit_events(
+        request: Request,
+        alias: Annotated[str | None, Query(min_length=1, max_length=64)] = None,
+        before: Annotated[int | None, Query(ge=1)] = None,
+        limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    ):
+        return request.app.state.gateway.store.audit(alias=alias, before=before, limit=limit)
+
     @app.post(
         "/api/v1/admin/models/{alias}/test",
         dependencies=[Depends(admin_auth)],
@@ -206,7 +215,7 @@ def create_app(settings: Settings | None = None, transport=None):
             raise GatewayError(422, "alias_mismatch", "Path and body aliases must match")
         gateway = request.app.state.gateway
         gateway.check_host(config)
-        gateway.store.put(config)
+        gateway.store.put(config, actor="platform_admin", request_id=request.state.request_id)
         return config
 
     @app.get("/api/v1/models", dependencies=[Depends(client_auth)])

@@ -350,3 +350,61 @@ def test_test_input_validation_does_not_call_provider(setup):
             == 422
         )
     assert not calls
+
+
+def test_audit_tracks_changes_without_values_or_noops(setup):
+    client, _, _, _ = setup
+    created = register(client, api_key_env="NEXUS_PROVIDER_PRIVATE")
+    register(client, api_key_env="NEXUS_PROVIDER_PRIVATE")
+    register(client, api_key_env="NEXUS_PROVIDER_PRIVATE", enabled=False)
+    response = client.get("/api/v1/admin/audit-events", headers=ADMIN)
+    assert response.status_code == 200
+    events = response.json()["data"]
+    assert len(events) == 2
+    assert events[0]["action"] == "disabled"
+    assert events[0]["changed_fields"] == ["enabled"]
+    assert events[1]["action"] == "created"
+    assert events[1]["request_id"] == created.headers["x-request-id"]
+    assert events[1]["actor"] == "platform_admin"
+    assert "NEXUS_PROVIDER_PRIVATE" not in response.text
+    assert "provider.test" not in response.text
+
+
+def test_audit_auth_pagination_and_validation(setup):
+    client, _, _, _ = setup
+    for enabled in (True, False, True):
+        register(client, enabled=enabled)
+    path = "/api/v1/admin/audit-events"
+    assert client.get(path, headers=CLIENT).status_code == 401
+    first = client.get(path, headers=ADMIN, params={"limit": 2}).json()
+    assert len(first["data"]) == 2
+    second = client.get(
+        path, headers=ADMIN, params={"before": first["next_before"], "limit": 2}
+    ).json()
+    assert len(second["data"]) == 1 and second["next_before"] is None
+    assert first["data"][-1]["id"] > second["data"][0]["id"]
+    assert client.get(path, headers=ADMIN, params={"alias": "unknown"}).json()["data"] == []
+    for params in ({"limit": 0}, {"limit": 101}, {"before": 0}):
+        assert client.get(path, headers=ADMIN, params=params).status_code == 422
+
+
+def test_audit_failure_rolls_back_model_change(setup):
+    import sqlite3
+
+    client, _, _, settings = setup
+    register(client)
+    with sqlite3.connect(settings.database_path) as db:
+        db.execute(
+            "CREATE TRIGGER reject_audit BEFORE INSERT ON model_audit BEGIN SELECT RAISE(ABORT, 'test'); END"
+        )
+    assert register(client, enabled=False).status_code == 500
+    assert client.get("/api/v1/admin/models", headers=ADMIN).json()[0]["enabled"] is True
+
+
+def test_audit_survives_restart_and_rejected_changes_leave_no_event(setup):
+    client, _, _, settings = setup
+    register(client)
+    assert register(client, base_url="https://untrusted.test").status_code == 403
+    with TestClient(create_app(settings)) as restarted:
+        events = restarted.get("/api/v1/admin/audit-events", headers=ADMIN).json()["data"]
+    assert len(events) == 1

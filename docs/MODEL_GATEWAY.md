@@ -24,6 +24,7 @@ capabilities 为管理员声明，须真实联调验证。cloud/local 是部署�
 | GET /health/ready | 无 | 数据库可访问，不代表模型可用 |
 | GET /api/v1/admin/models | 管理员 | 配置列表，不含密钥 |
 | GET /api/v1/admin/settings | 管理员 | 查看部署允许的模型主机 |
+| GET /api/v1/admin/audit-events | 管理员 | 配置变更审计，按 alias 筛选，before 游标分页 |
 | PUT /api/v1/admin/models/{alias} | 管理员 | 创建、更新、禁用 |
 | POST /api/v1/admin/models/{alias}/test | 管理员 | 真实对话或向量测试，返回耗时与归一化结果 |
 | GET /api/v1/models | 调用端 | 启用模型别名及能力 |
@@ -61,6 +62,10 @@ Content-Type: application/json
 总时限覆盖接收完整响应；超过 timeout_seconds 返回 504。读取上游时累计限制解码后的响应为 8 MiB，超限返回 502 provider_response_too_large。畸形嵌套字段返回 502，不透传上游正文。
 
 ## 安全边界
+
+模型配置保存与审计写入同一事务，审计失败则更新回滚。审计只记录变更字段名，不保存字段值、密钥或提示词。相同配置重复保存不产生事件，既有配置不补造历史。操作者目前为共享管理员类别 platform_admin（内部调用为 system），后续接入用户体系后替换为可信用户 ID。
+
+日志接口可传 `alias`、`limit`（1–100，默认 50）、`before`（上一页 next_before）。返回 `data` 和 `next_before`，按事件 ID 降序；游标为空表示结束。当前不提供日志修改/删除 API，但此日志不是防篡改合规存储。
 
 - 无默认有效凭据，管理员与调用令牌必须不同且长度足够。
 - api_key_env 仅允许 NEXUS_PROVIDER_ 前缀，不能引用任意系统变量。
