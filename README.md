@@ -11,6 +11,8 @@
 
 当前已完成及下一步清单见 [STATUS.md](docs/STATUS.md)。企业模式启用和接入流程见 [TENANT_ACCESS.md](docs/TENANT_ACCESS.md)。默认 bootstrap 模式仍为原开发模式，企业授权需要显式设置 `NEXUS_AUTH_MODE=tenant`；企业接入 API 不等于完整文档、会话和用户隔离。
 
+本轮已加入 SQLAlchemy、Alembic 及 PostgreSQL 部署/SQLite 导入工具，详见 [DATABASE.md](docs/DATABASE.md)。保持 NEXUS_DATABASE_URL 为空即可继续使用原 SQLite 文件；真实 PostgreSQL 联调尚待完成。
+
 1. **当前阶段**：工程、模型配置、云端/本地协议适配、鉴权、测试、部署配置。
 2. 企业基础：PostgreSQL、迁移、企业/客户组织/用户权限、企业模型授权、React 管理后台。
 3. 知识库：文档处理、版本发布、中文混合检索、引用问答。
@@ -45,7 +47,7 @@ python -m venv .venv
 source .venv/bin/activate
 # Windows PowerShell 改用：.venv\Scripts\Activate.ps1
 python -m pip install --require-hashes -r requirements.lock
-python -m pip install -e ".[dev]" -c requirements.lock
+python -m pip install -e ".[dev]"
 ```
 
 通过操作系统设置 `.env.example` 中的环境变量。原生启动**不会自动读取 `.env`**。
@@ -132,6 +134,6 @@ python -m ruff check src tests
 - 兼容接口可以配置 `token_parameter` 为 `max_tokens` 或 `max_completion_tokens`；对不支持 temperature 的模型关闭 `supports_temperature`。调用端统一使用 `max_tokens`，网关负责映射。
 - 总调用时限使用 `timeout_seconds`，上游解码后响应最多 8 MiB；超限返回明确错误，不截取成成功答案。
 - 暂无自动重试及跨模型降级，避免重复计费和私有内容意外发送到云端。
-- SQLite 仅保存首阶段配置，下一阶段迁移 PostgreSQL 并加入企业授权。
+- 已提供 PostgreSQL 存储和迁移代码，SQLite 保留为开发方式；PostgreSQL 实库测试、RLS 和生产恢复演练尚待完成。
 - 主机允许列表只配置可信端点，生产还需网络出口控制以约束 DNS 变化及内网访问。
 - 响应采用 Nexus 格式，不是完整的第三方 SDK 兼容代理。

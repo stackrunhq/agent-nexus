@@ -50,3 +50,13 @@
 - 新增 STATUS.md 汇总已完成和下一步，TENANT_ACCESS.md 说明启用、授权及接口边界。
 - 验证：48 项测试、Ruff、JavaScript 语法、Compose 配置与 Git 空白检查通过。
 - 未完成：PostgreSQL、企业页面、员工/角色、知识库及会话隔离、配额限流；真实模型、容器运行及浏览器交互未实测。
+
+## 2026-09-08 · 步骤 07 · 双数据库存储与迁移
+
+- 模型、企业和审计存储改用 SQLAlchemy，保留 SQLite 开发方式并接入 PostgreSQL 驱动。
+- PostgreSQL 采用按模型/企业的事务锁，保持条件更新及审计原子性；数据库查询不阻塞异步模型请求事件循环。
+- Alembic 初始版本 0001、显式升级命令、旧 SQLite 结构登记、SQLite 只读导入及逐表核对，拒绝非空目标和同源导入。
+- PostgreSQL Compose 按数据库健康 → 迁移成功 → API 启动；迁移脚本随 wheel 打包。
+- 更新锁定依赖、CI PostgreSQL 专用测试服务、DATABASE.md 和当前功能清单。
+- 验证：55 项通过、1 项实库测试因无服务跳过；Ruff、脚本语法、Compose 配置和 wheel 构建通过。
+- 尚未验证真实 PostgreSQL、容器运行、生产备份恢复及浏览器交互；不能把跳过测试表述为通过。

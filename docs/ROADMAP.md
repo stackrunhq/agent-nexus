@@ -20,7 +20,9 @@
 
 ## 02 企业与后台基础
 
-0.3 已先实现企业机器凭据、模型授权/撤销、停用、轮换和调用层授权 API，详见 TENANT_ACCESS.md。尚未完成 PostgreSQL、用户/角色、企业页面和文档数据隔离；下一步优先迁移 PostgreSQL + Alembic。当前整体状态见 STATUS.md。
+0.3 已先实现企业机器凭据、模型授权/撤销、停用、轮换和调用层授权 API，详见 TENANT_ACCESS.md。用户/角色、企业页面和文档数据隔离尚未完成。当前整体状态见 STATUS.md。
+
+数据库增量已交付 SQLAlchemy 存储、Alembic 0001、旧 SQLite 导入、PostgreSQL Compose 与 CI 集成测试；本机无数据库服务，实际 PostgreSQL 测试尚未执行。下一步先完成实库验证和备份恢复，再推进企业页面与用户/角色。
 
 依赖 01。交付 PostgreSQL + Alembic、企业/客户组织/用户/角色、应用及版本、管理员登录、React + TypeScript 后台、模型配置页面和试调用。
 

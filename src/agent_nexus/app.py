@@ -15,13 +15,16 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.exceptions import HTTPException
+from starlette.concurrency import run_in_threadpool
 
 from .gateway import Gateway, GatewayError
 from .schemas import ChatRequest, ChatResponse, EmbeddingRequest, EmbeddingResponse, ModelConfig
 from .schemas import Message, ModelTestRequest, ModelTestResponse
 from .schemas import ModelView
 from .store import ConfigurationConflict, ModelStore
-from .tenants import TenantStore, tenant_router
+from .tenants import tenant_router
+from .tenant_store import TenantStore
+from .database import Database
 
 
 @dataclass
@@ -31,6 +34,7 @@ class Settings:
     database_path: str
     allowed_hosts: set[str]
     auth_mode: str = "bootstrap"
+    database_url: str | None = None
 
     @classmethod
     def from_env(cls):
@@ -46,6 +50,7 @@ class Settings:
                 if h.strip()
             },
             os.getenv("NEXUS_AUTH_MODE", "bootstrap"),
+            os.getenv("NEXUS_DATABASE_URL") or None,
         )
 
     def validate(self):
@@ -67,13 +72,17 @@ def create_app(settings: Settings | None = None, transport=None):
     @asynccontextmanager
     async def lifespan(app):
         settings.validate()
-        store = ModelStore(settings.database_path)
-        app.state.tenants = TenantStore(settings.database_path)
-        async with httpx.AsyncClient(
-            transport=transport, follow_redirects=False, trust_env=False
-        ) as client:
-            app.state.gateway = Gateway(store, client, settings.allowed_hosts)
-            yield
+        database = Database(settings.database_url or settings.database_path)
+        try:
+            store = ModelStore(database)
+            app.state.tenants = TenantStore(database)
+            async with httpx.AsyncClient(
+                transport=transport, follow_redirects=False, trust_env=False
+            ) as client:
+                app.state.gateway = Gateway(store, client, settings.allowed_hosts)
+                yield
+        finally:
+            database.close()
 
     app = FastAPI(title="Agent Nexus — Model Gateway", version="0.3.0", lifespan=lifespan)
     static_dir = Path(__file__).parent / "static"
@@ -320,14 +329,14 @@ def create_app(settings: Settings | None = None, transport=None):
         "/api/v1/chat/completions", dependencies=[Depends(client_auth)], response_model=ChatResponse
     )
     async def chat(body: ChatRequest, request: Request):
-        authorize_model(request, body.model)
+        await run_in_threadpool(authorize_model, request, body.model)
         return await request.app.state.gateway.chat(body, request.state.request_id)
 
     @app.post(
         "/api/v1/embeddings", dependencies=[Depends(client_auth)], response_model=EmbeddingResponse
     )
     async def embed(body: EmbeddingRequest, request: Request):
-        authorize_model(request, body.model)
+        await run_in_threadpool(authorize_model, request, body.model)
         return await request.app.state.gateway.embed(body, request.state.request_id)
 
     return app

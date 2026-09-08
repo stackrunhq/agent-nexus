@@ -1,8 +1,7 @@
-import sqlite3
 import json
 import hashlib
 from datetime import datetime, timezone
-from pathlib import Path
+from .database import Database, run
 
 from .schemas import ModelConfig
 
@@ -14,36 +13,19 @@ class ConfigurationConflict(Exception):
 class ModelStore:
     """Bootstrap configuration storage; never stores provider secrets."""
 
-    def __init__(self, path: str):
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self.path = path
-        with self.connect() as db:
-            db.execute(
-                "CREATE TABLE IF NOT EXISTS models (alias TEXT PRIMARY KEY, config TEXT NOT NULL)"
-            )
-            db.execute(
-                "CREATE TABLE IF NOT EXISTS model_audit ("
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL, "
-                "actor TEXT NOT NULL, action TEXT NOT NULL, alias TEXT NOT NULL, "
-                "changed_fields TEXT NOT NULL, request_id TEXT)"
-            )
-            db.execute(
-                "CREATE INDEX IF NOT EXISTS ix_model_audit_alias_id ON model_audit(alias, id)"
-            )
-
-    def connect(self):
-        return sqlite3.connect(self.path, timeout=10)
+    def __init__(self, path: str | Database):
+        self.database = path if isinstance(path, Database) else Database(path)
 
     def list(self) -> list[ModelConfig]:
-        with self.connect() as db:
+        with self.database.read() as db:
             return [
                 ModelConfig.model_validate_json(row[0])
-                for row in db.execute("SELECT config FROM models ORDER BY alias")
+                for row in run(db, "SELECT config FROM models ORDER BY alias")
             ]
 
     def get(self, alias: str) -> ModelConfig | None:
-        with self.connect() as db:
-            row = db.execute("SELECT config FROM models WHERE alias = ?", (alias,)).fetchone()
+        with self.database.read() as db:
+            row = run(db, "SELECT config FROM models WHERE alias = :alias", alias=alias).fetchone()
         return ModelConfig.model_validate_json(row[0]) if row else None
 
     @staticmethod
@@ -61,11 +43,10 @@ class ModelStore:
         actor: str = "system",
         request_id: str | None = None,
     ):
-        with self.connect() as db:
+        with self.database.write("model:" + config.alias) as db:
             # Serialize read/modify/audit so the event matches the actual previous value.
-            db.execute("BEGIN IMMEDIATE")
-            row = db.execute(
-                "SELECT config FROM models WHERE alias = ?", (config.alias,)
+            row = run(
+                db, "SELECT config FROM models WHERE alias = :alias", alias=config.alias
             ).fetchone()
             previous_model = ModelConfig.model_validate_json(row[0]) if row else None
             if (row and expected_etag != self.etag(previous_model)) or (
@@ -80,38 +61,43 @@ class ModelStore:
             action = "created" if not row else "updated"
             if row and "enabled" in changed:
                 action = "enabled" if config.enabled else "disabled"
-            db.execute(
-                "INSERT INTO models VALUES (?, ?) ON CONFLICT(alias) DO UPDATE SET config=excluded.config",
-                (config.alias, config.model_dump_json()),
+            run(
+                db,
+                "INSERT INTO models(alias, config) VALUES (:alias, :config) ON CONFLICT(alias) DO UPDATE SET config=excluded.config",
+                alias=config.alias,
+                config=config.model_dump_json(),
             )
-            db.execute(
+            run(
+                db,
                 "INSERT INTO model_audit(created_at, actor, action, alias, changed_fields, request_id) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    datetime.now(timezone.utc).isoformat(),
-                    actor,
-                    action,
-                    config.alias,
-                    json.dumps(changed),
-                    request_id,
-                ),
+                "VALUES (:created_at, :actor, :action, :alias, :changed_fields, :request_id)",
+                created_at=datetime.now(timezone.utc).isoformat(),
+                actor=actor,
+                action=action,
+                alias=config.alias,
+                changed_fields=json.dumps(changed),
+                request_id=request_id,
             )
 
     def audit(self, *, alias: str | None = None, before: int | None = None, limit: int = 50):
-        conditions, params = [], []
+        conditions, params = [], {"limit": limit + 1}
         if alias is not None:
-            conditions.append("alias = ?")
-            params.append(alias)
+            conditions.append("alias = :alias")
+            params["alias"] = alias
         if before is not None:
-            conditions.append("id < ?")
-            params.append(before)
+            conditions.append("id < :before")
+            params["before"] = before
         where = " WHERE " + " AND ".join(conditions) if conditions else ""
-        with self.connect() as db:
-            db.row_factory = sqlite3.Row
-            rows = db.execute(
-                "SELECT * FROM model_audit" + where + " ORDER BY id DESC LIMIT ?",
-                (*params, limit + 1),
-            ).fetchall()
+        with self.database.read() as db:
+            rows = (
+                run(
+                    db,
+                    "SELECT * FROM model_audit" + where + " ORDER BY id DESC LIMIT :limit",
+                    **params,
+                )
+                .mappings()
+                .all()
+            )
         data = [
             {**dict(row), "changed_fields": json.loads(row["changed_fields"])}
             for row in rows[:limit]

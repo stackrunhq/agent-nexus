@@ -5,6 +5,7 @@ import os
 from urllib.parse import urlsplit
 
 import httpx
+from starlette.concurrency import run_in_threadpool
 from pydantic import ValidationError
 
 from .schemas import ChatRequest, ChatResponse, EmbeddingRequest, EmbeddingResponse, Usage
@@ -85,7 +86,7 @@ class Gateway:
             ) from None
 
     async def chat(self, request: ChatRequest, request_id: str):
-        config = self.resolve(request.model, "chat")
+        config = await run_in_threadpool(self.resolve, request.model, "chat")
         if request.temperature is not None and not config.supports_temperature:
             raise GatewayError(422, "unsupported_parameter", "Model does not support temperature")
         limit = request.max_tokens or config.max_output_tokens
@@ -141,7 +142,7 @@ class Gateway:
             ) from None
 
     async def embed(self, request: EmbeddingRequest, request_id: str):
-        config = self.resolve(request.model, "embeddings")
+        config = await run_in_threadpool(self.resolve, request.model, "embeddings")
         body = {"model": config.model, "input": request.input}
         if config.provider == "ollama":
             body["truncate"] = False

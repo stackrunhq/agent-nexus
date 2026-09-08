@@ -5,13 +5,27 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: nexus_test
+          POSTGRES_USER: nexus_test
+          POSTGRES_PASSWORD: ci-test-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nexus_test -d nexus_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      NEXUS_TEST_POSTGRES_URL: postgresql+psycopg://nexus_test:ci-test-only-password@localhost:5432/nexus_test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python -m pip install --require-hashes -r requirements.lock
-      - run: python -m pip install -e '.[dev]' -c requirements.lock
+      - run: python -m pip install -e '.[dev]'
       - run: python -m pytest -q
       - run: python -m ruff check --config pyproject.toml src tests
       - run: node --check src/agent_nexus/static/admin.js
