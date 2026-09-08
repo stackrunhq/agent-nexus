@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>模型工作台 · Agent Nexus</title>
+  <link rel="stylesheet" href="/admin/assets/admin.css">
+  <script src="/admin/assets/admin.js" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="/admin"><span class="logo">N</span><span>Agent Nexus<small>企业智能应用中台</small></span></a>
+    <div class="nav-label">工作空间</div>
+    <a class="nav-item active" href="#workspace">◈ <span>模型工作台</span></a>
+    <a class="nav-item" href="/docs" target="_blank" rel="noopener">↗ <span>API 文档</span></a>
+    <div class="sidebar-note"><span class="dot"></span> 统一模型接入<br><small>云端与本地，共用一套接口</small></div>
+  </aside>
+  <main id="workspace">
+    <header><div><div class="eyebrow">MODEL WORKSPACE / 02</div><h1>模型工作台</h1><p>连接合适的模型，为应用提供稳定的智能能力。</p></div><span class="version">开发预览 · 0.2</span></header>
+    <section class="panel auth-panel">
+      <div><h2>管理员连接</h2><p id="connection-state">输入管理员令牌，管理当前实例的模型。</p></div>
+      <form id="login-form" class="auth-form"><label class="sr-only" for="token">管理员令牌</label><input id="token" type="password" autocomplete="off" placeholder="管理员令牌" required minlength="32"><button type="submit">连接工作台</button></form>
+      <button type="button" id="logout" class="secondary" hidden>断开连接</button>
+    </section>
+    <div id="notice" role="status" aria-live="polite" hidden></div>
+    <div id="private-workspace" hidden>
+      <section class="stats" aria-label="模型概览"><div><span>已配置模型</span><strong id="count-total">0</strong></div><div><span>可用配置</span><strong id="count-enabled">0</strong></div><div><span>本地部署</span><strong id="count-local">0</strong></div></section>
+      <section class="panel model-section">
+        <div class="section-head"><div><h2>模型连接</h2><p>业务使用模型别名调用，连接信息由工作台统一管理。</p></div><div class="actions"><button id="refresh" class="secondary" type="button">刷新</button><button id="new-model" type="button">＋ 添加模型</button></div></div>
+        <div id="model-list" class="model-list"></div>
+      </section>
+      <div class="columns">
+        <section class="panel" id="editor">
+          <div class="section-head"><div><div class="eyebrow">CONFIGURATION</div><h2 id="editor-title">添加模型</h2></div><button type="button" id="reset-model" class="text-button">重置</button></div>
+          <form id="model-form">
+            <div class="form-grid">
+              <label>模型别名<input name="alias" required maxlength="64" pattern="[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}" placeholder="例如 local-help"></label>
+              <label>部署位置<select name="deployment"><option value="local">本地 / 私有部署</option><option value="cloud">云端服务</option></select></label>
+              <label>接入协议<select name="provider"><option value="ollama">Ollama 原生</option><option value="openai_compatible">兼容 API（含 vLLM）</option></select></label>
+              <label>实际模型名称<input name="model" required maxlength="200" placeholder="模型服务中的名称"></label>
+              <label class="full">API 根地址<input name="base_url" type="url" required placeholder="http://host.docker.internal:11434"><small>Ollama 不附加 /api；兼容接口填写服务商指定根地址。</small></label>
+              <label class="full">密钥环境变量名（可选）<input name="api_key_env" pattern="NEXUS_PROVIDER_[A-Z0-9_]+" placeholder="NEXUS_PROVIDER_CLOUD_KEY"><small>填写服务器上的变量名称，不要填写密钥本身。</small></label>
+              <fieldset class="full"><legend>模型能力</legend><label class="check"><input name="chat" type="checkbox" checked>文本对话</label><label class="check"><input name="embeddings" type="checkbox">向量生成</label></fieldset>
+              <label>最大输出 token<input name="max_output_tokens" type="number" min="1" max="32768" value="2048" required></label>
+              <label>超时（秒）<input name="timeout_seconds" type="number" min="1" max="300" step="0.1" value="60" required></label>
+              <label class="full" id="token-parameter-field">兼容接口 token 参数<select name="token_parameter"><option value="max_tokens">max_tokens</option><option value="max_completion_tokens">max_completion_tokens</option></select></label>
+              <label class="check full"><input name="supports_temperature" type="checkbox" checked>支持 temperature 参数</label>
+              <label class="check full"><input name="enabled" type="checkbox" checked>启用此模型</label>
+            </div>
+            <p class="hint" id="allowed-hosts"></p>
+            <button type="submit" class="wide">保存模型配置</button>
+          </form>
+        </section>
+        <section class="panel playground">
+          <div class="eyebrow">PLAYGROUND</div><h2>连接与能力测试</h2><p>向已保存的模型发送一次真实请求，核对连接和返回结果。</p>
+          <form id="test-form">
+            <div class="form-grid"><label>选择模型<select id="test-model" required></select></label><label>测试能力<select id="test-capability"><option value="chat">文本对话</option><option value="embeddings">向量生成</option></select></label></div>
+            <label>测试内容<textarea id="test-input" rows="5" required maxlength="4000">请用一句话介绍你能提供的帮助。</textarea></label>
+            <p class="hint">测试会调用模型，云端可能产生费用。仅发送非敏感测试内容。</p>
+            <button type="submit" id="test-submit" class="wide">发送测试请求</button>
+          </form>
+          <div id="test-status" class="result-meta" role="status" aria-live="polite">等待测试</div>
+          <pre id="test-result" class="result">保存模型配置后，在这里查看回答、用量与耗时。</pre>
+        </section>
+      </div>
+    </div>
+    <footer>Agent Nexus · 模型网关开发工作台 <span>令牌仅保留在当前页面内存，刷新后需重新连接。</span></footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,23 @@
+services:
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      NEXUS_ADMIN_TOKEN: ${NEXUS_ADMIN_TOKEN:?Set NEXUS_ADMIN_TOKEN in .env}
+      NEXUS_CLIENT_TOKEN: ${NEXUS_CLIENT_TOKEN:?Set NEXUS_CLIENT_TOKEN in .env}
+      NEXUS_ALLOWED_HOSTS: ${NEXUS_ALLOWED_HOSTS:-localhost,127.0.0.1,host.docker.internal}
+      NEXUS_DATABASE_PATH: /app/data/nexus.db
+      NEXUS_PROVIDER_CLOUD_KEY: ${NEXUS_PROVIDER_CLOUD_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - nexus-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  nexus-data:

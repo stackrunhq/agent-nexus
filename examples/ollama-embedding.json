@@ -1,0 +1,8 @@
+{
+  "alias": "local-embedding",
+  "provider": "ollama",
+  "model": "embeddinggemma",
+  "base_url": "http://host.docker.internal:11434",
+  "deployment": "local",
+  "capabilities": ["embeddings"]
+}

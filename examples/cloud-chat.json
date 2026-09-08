@@ -1,0 +1,9 @@
+{
+  "alias": "cloud-help",
+  "provider": "openai_compatible",
+  "model": "replace-with-provider-model-id",
+  "base_url": "https://your-approved-provider.example/v1",
+  "deployment": "cloud",
+  "api_key_env": "NEXUS_PROVIDER_CLOUD_KEY",
+  "capabilities": ["chat"]
+}

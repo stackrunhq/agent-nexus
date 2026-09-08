@@ -1,0 +1,8 @@
+{
+  "alias": "private-help",
+  "provider": "openai_compatible",
+  "model": "replace-with-served-model-name",
+  "base_url": "http://host.docker.internal:8001/v1",
+  "deployment": "local",
+  "capabilities": ["chat"]
+}
