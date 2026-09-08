@@ -63,6 +63,14 @@
           <pre id="test-result" class="result">保存模型配置后，在这里查看回答、用量与耗时。</pre>
         </section>
       </div>
+      <section class="panel" aria-labelledby="audit-heading">
+        <div class="section-head"><div><div class="eyebrow">ACTIVITY</div><h2 id="audit-heading">配置修改记录</h2><p>查看模型配置的变更时间、字段和关联请求。</p></div></div>
+        <form id="audit-filter-form" class="auth-form"><label for="audit-filter">模型别名筛选<input id="audit-filter" maxlength="64" placeholder="留空查看全部模型"></label><button type="submit" class="secondary">查询记录</button></form>
+        <p class="hint">当前操作者为共享管理员身份，尚未区分个人账号。只记录字段名，不保存配置值。</p>
+        <div class="audit-scroll"><table class="audit-table"><thead><tr><th>时间</th><th>模型 / 操作</th><th>变更字段</th><th>操作者 / 请求 ID</th></tr></thead><tbody id="audit-rows"></tbody></table></div>
+        <p id="audit-status" role="status" aria-live="polite">尚未加载记录</p>
+        <button id="audit-more" class="secondary" type="button" hidden>加载更早记录</button>
+      </section>
     </div>
     <footer>Agent Nexus · 模型网关开发工作台 <span>令牌仅保留在当前页面内存，刷新后需重新连接。</span></footer>
   </main>

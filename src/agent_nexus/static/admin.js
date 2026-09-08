@@ -7,6 +7,9 @@ let token = "";
 let models = [];
 let epoch = 0;
 let testing = false;
+let auditBefore = null;
+let auditSerial = 0;
+let auditAlias = "";
 const pending = new Set();
 
 function notice(message, error = false) {
@@ -111,6 +114,39 @@ function renderModels() {
 async function refresh() {
   models = await api("/models");
   renderModels();
+  await loadAudit();
+}
+
+async function loadAudit(append = false) {
+  const serial = ++auditSerial;
+  if (!append) auditAlias = byId("audit-filter").value.trim();
+  const params = new URLSearchParams({ limit: "20" });
+  if (auditAlias) params.set("alias", auditAlias);
+  if (append && auditBefore) params.set("before", String(auditBefore));
+  byId("audit-status").textContent = "正在读取修改记录…";
+  try {
+    const page = await api(`/audit-events?${params}`);
+    if (serial !== auditSerial) return;
+    const rows = byId("audit-rows");
+    if (!append) rows.replaceChildren();
+    const labels = { created: "创建", updated: "修改", enabled: "启用", disabled: "禁用" };
+    for (const event of page.data) {
+      const row = node("tr");
+      row.append(
+        node("td", new Date(event.created_at).toLocaleString()),
+        node("td", `${event.alias} · ${labels[event.action] || event.action}`),
+        node("td", event.changed_fields.join("、")),
+        node("td", `${event.actor}\n${event.request_id || "内部操作"}`),
+      );
+      rows.append(row);
+    }
+    auditBefore = page.next_before;
+    byId("audit-more").hidden = !auditBefore;
+    byId("audit-status").textContent = rows.children.length ? `已显示 ${rows.children.length} 条记录${auditBefore ? "" : " · 已到末尾"}` : "暂无修改记录";
+  } catch (error) {
+    if (serial === auditSerial && error.name !== "AbortError") byId("audit-status").textContent = "读取失败，请重试查询。";
+    throw error;
+  }
 }
 
 function providerFields() {
@@ -162,6 +198,12 @@ byId("login-form").addEventListener("submit", (event) => {
 
 byId("logout").addEventListener("click", () => {
   epoch += 1;
+  auditSerial += 1;
+  auditBefore = null;
+  byId("audit-rows").replaceChildren();
+  byId("audit-filter").value = "";
+  byId("audit-status").textContent = "尚未加载记录";
+  byId("audit-more").hidden = true;
   token = "";
   for (const controller of pending) controller.abort();
   models = [];
@@ -225,3 +267,9 @@ byId("test-form").addEventListener("submit", (event) => {
   });
 });
 providerFields();
+
+byId("audit-filter-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  action(event.submitter, () => loadAudit());
+});
+byId("audit-more").addEventListener("click", (event) => action(event.currentTarget, () => loadAudit(true)));

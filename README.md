@@ -66,6 +66,7 @@ Linux 使用 `export NEXUS_ADMIN_TOKEN=...` 设置环境，再用 systemd 托管
 3. 勾选真实支持的对话/向量能力，设置超时和输出限制，保存配置。
 4. 在“连接与能力测试”选择模型及能力，发送一次测试请求，查看响应、用量、耗时和请求 ID。
 5. 可在模型卡片编辑、启用或禁用配置。启用状态只代表配置可调用，不代表模型健康。
+6. 在“配置修改记录”按模型别名查询历史，查看时间、变更字段和请求 ID，支持加载更早记录。
 
 页面令牌仅保存在内存，断开或刷新后需重新输入；测试会请求真实模型，可能产生供应商费用。页面使用原生 HTML/CSS/JavaScript 随 Python 包交付，完整企业后台仍按下一阶段引入 React。
 
@@ -119,6 +120,8 @@ python -m ruff check src tests
 本次验证记录见 [VALIDATION.md](docs/VALIDATION.md)。运行依赖锁定在 `requirements.lock`，CI 配置覆盖测试、静态检查和 Docker 镜像构建。
 
 ## 当前限制
+
+开发修改见 [CHANGELOG.md](CHANGELOG.md)，本地 Git 工作约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。每个完成步骤创建本地提交，不推送远端。
 
 - 仅文本同步对话和向量。流式、图片、工具调用和 JSON Schema 暂不支持，未知参数返回 422。
 - 兼容接口可以配置 `token_parameter` 为 `max_tokens` 或 `max_completion_tokens`；对不支持 temperature 的模型关闭 `supports_temperature`。调用端统一使用 `max_tokens`，网关负责映射。
