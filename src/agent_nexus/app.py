@@ -21,6 +21,7 @@ from .schemas import ChatRequest, ChatResponse, EmbeddingRequest, EmbeddingRespo
 from .schemas import Message, ModelTestRequest, ModelTestResponse
 from .schemas import ModelView
 from .store import ConfigurationConflict, ModelStore
+from .tenants import TenantStore, tenant_router
 
 
 @dataclass
@@ -29,6 +30,7 @@ class Settings:
     client_token: str
     database_path: str
     allowed_hosts: set[str]
+    auth_mode: str = "bootstrap"
 
     @classmethod
     def from_env(cls):
@@ -43,10 +45,15 @@ class Settings:
                 ).split(",")
                 if h.strip()
             },
+            os.getenv("NEXUS_AUTH_MODE", "bootstrap"),
         )
 
     def validate(self):
-        if min(len(self.admin_token), len(self.client_token)) < 32:
+        if self.auth_mode not in {"bootstrap", "tenant"}:
+            raise RuntimeError("NEXUS_AUTH_MODE must be bootstrap or tenant")
+        if len(self.admin_token) < 32 or (
+            self.auth_mode == "bootstrap" and len(self.client_token) < 32
+        ):
             raise RuntimeError(
                 "Configure separate NEXUS_ADMIN_TOKEN and NEXUS_CLIENT_TOKEN of at least 32 characters"
             )
@@ -61,13 +68,14 @@ def create_app(settings: Settings | None = None, transport=None):
     async def lifespan(app):
         settings.validate()
         store = ModelStore(settings.database_path)
+        app.state.tenants = TenantStore(settings.database_path)
         async with httpx.AsyncClient(
             transport=transport, follow_redirects=False, trust_env=False
         ) as client:
             app.state.gateway = Gateway(store, client, settings.allowed_hosts)
             yield
 
-    app = FastAPI(title="Agent Nexus — Model Gateway", version="0.2.0", lifespan=lifespan)
+    app = FastAPI(title="Agent Nexus — Model Gateway", version="0.3.0", lifespan=lifespan)
     static_dir = Path(__file__).parent / "static"
     app.mount("/admin/assets", StaticFiles(directory=static_dir), name="admin-assets")
     bearer = HTTPBearer(auto_error=False)
@@ -78,11 +86,35 @@ def create_app(settings: Settings | None = None, transport=None):
         ):
             raise GatewayError(401, "unauthorized", "Valid administrator token required")
 
-    def client_auth(credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]):
-        if not credentials or not secrets.compare_digest(
-            credentials.credentials.encode(), settings.client_token.encode()
-        ):
+    def client_auth(
+        request: Request,
+        credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+    ):
+        if not credentials:
             raise GatewayError(401, "unauthorized", "Valid client token required")
+        if settings.auth_mode == "tenant":
+            tenant_id = request.app.state.tenants.authenticate(credentials.credentials)
+            if tenant_id is None:
+                raise GatewayError(401, "unauthorized", "Valid tenant credential required")
+            request.state.tenant_id = tenant_id
+        else:
+            if not secrets.compare_digest(
+                credentials.credentials.encode(), settings.client_token.encode()
+            ):
+                raise GatewayError(401, "unauthorized", "Valid client token required")
+            request.state.tenant_id = None
+
+    app.include_router(tenant_router(lambda: app.state.tenants, admin_auth))
+
+    def allowed_models(request: Request):
+        if request.state.tenant_id is None:
+            return None
+        return request.app.state.tenants.allowed(request.state.tenant_id)
+
+    def authorize_model(request: Request, alias: str):
+        allowed = allowed_models(request)
+        if allowed is not None and alias not in allowed:
+            raise GatewayError(403, "model_not_allowed", "Model is not assigned to this tenant")
 
     @app.middleware("http")
     async def request_context(request: Request, call_next):
@@ -163,7 +195,7 @@ def create_app(settings: Settings | None = None, transport=None):
 
     @app.get("/api/v1/admin/settings", dependencies=[Depends(admin_auth)])
     def admin_settings():
-        return {"allowed_hosts": sorted(settings.allowed_hosts)}
+        return {"allowed_hosts": sorted(settings.allowed_hosts), "auth_mode": settings.auth_mode}
 
     @app.get("/api/v1/admin/audit-events", dependencies=[Depends(admin_auth)])
     def audit_events(
@@ -275,11 +307,12 @@ def create_app(settings: Settings | None = None, transport=None):
 
     @app.get("/api/v1/models", dependencies=[Depends(client_auth)])
     def models(request: Request):
+        allowed = allowed_models(request)
         return {
             "data": [
                 {"id": m.alias, "deployment": m.deployment, "capabilities": m.capabilities}
                 for m in request.app.state.gateway.store.list()
-                if m.enabled
+                if m.enabled and (allowed is None or m.alias in allowed)
             ]
         }
 
@@ -287,12 +320,14 @@ def create_app(settings: Settings | None = None, transport=None):
         "/api/v1/chat/completions", dependencies=[Depends(client_auth)], response_model=ChatResponse
     )
     async def chat(body: ChatRequest, request: Request):
+        authorize_model(request, body.model)
         return await request.app.state.gateway.chat(body, request.state.request_id)
 
     @app.post(
         "/api/v1/embeddings", dependencies=[Depends(client_auth)], response_model=EmbeddingResponse
     )
     async def embed(body: EmbeddingRequest, request: Request):
+        authorize_model(request, body.model)
         return await request.app.state.gateway.embed(body, request.state.request_id)
 
     return app

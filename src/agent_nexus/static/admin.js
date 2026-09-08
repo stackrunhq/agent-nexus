@@ -194,7 +194,9 @@ byId("login-form").addEventListener("submit", (event) => {
       byId("private-workspace").hidden = false;
       byId("login-form").hidden = true;
       byId("logout").hidden = false;
-      byId("connection-state").textContent = "已连接 · 可以管理模型并发送测试请求";
+      byId("connection-state").textContent = settings.auth_mode === "tenant"
+        ? "已连接 · 企业调用授权模式已启用"
+        : "已连接 · 开发模式，全局调用令牌可使用全部启用模型";
       byId("token").value = "";
       notice("");
     } catch (error) { token = ""; throw error; }

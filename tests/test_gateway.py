@@ -327,7 +327,7 @@ def test_admin_shell_and_settings_security(setup):
         assert client.get(f"/admin/assets/{path}").status_code == 200
     assert client.get("/api/v1/admin/settings", headers=CLIENT).status_code == 401
     settings = client.get("/api/v1/admin/settings", headers=ADMIN)
-    assert settings.json() == {"allowed_hosts": ["provider.test"]}
+    assert settings.json() == {"allowed_hosts": ["provider.test"], "auth_mode": "bootstrap"}
     assert settings.headers["cache-control"] == "no-store"
 
 

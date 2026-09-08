@@ -20,6 +20,8 @@
 
 ## 02 企业与后台基础
 
+0.3 已先实现企业机器凭据、模型授权/撤销、停用、轮换和调用层授权 API，详见 TENANT_ACCESS.md。尚未完成 PostgreSQL、用户/角色、企业页面和文档数据隔离；下一步优先迁移 PostgreSQL + Alembic。当前整体状态见 STATUS.md。
+
 依赖 01。交付 PostgreSQL + Alembic、企业/客户组织/用户/角色、应用及版本、管理员登录、React + TypeScript 后台、模型配置页面和试调用。
 
 当前配置导入 PostgreSQL；增加 secret 引用服务、修改审计、企业模型可见性及额度。全局调用令牌替换为服务凭据/用户短期令牌，企业身份从可信认证上下文取得。
