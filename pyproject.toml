@@ -12,6 +12,7 @@ dependencies = ["fastapi>=0.115,<1", "uvicorn>=0.34,<1", "httpx>=0.28,<1", "pyda
 [project.scripts]
 nexus-db = "agent_nexus_cli.database:main"
 nexus-document = "agent_nexus_cli.document:main"
+nexus-worker = "agent_nexus_cli.worker:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "ruff>=0.11,<1"]

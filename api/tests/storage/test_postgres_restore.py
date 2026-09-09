@@ -24,6 +24,8 @@ from agent_nexus.identity.store import IdentityStore
 from agent_nexus.identity.schemas import UserCreate
 from agent_nexus.applications.store import ApplicationStore
 from agent_nexus.applications.schemas import ApplicationCreate, VersionCreate
+from agent_nexus.knowledge.store import KnowledgeStore
+from agent_nexus.knowledge.jobs import run_once
 
 
 def pg_tool(name):
@@ -86,8 +88,16 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             "platform_admin",
             "restore",
         )
+        document = KnowledgeStore(source).upload(
+            tenant["id"], application["id"], version["id"], "manual.txt",
+            "恢复后的产品手册".encode("utf-8"), "platform_admin", "restore",
+        )
+        assert run_once(KnowledgeStore(source))
         ApplicationStore(source).transition(
             tenant["id"], application["id"], version["id"], "published", "platform_admin", "restore"
+        )
+        KnowledgeStore(source).publish(
+            tenant["id"], application["id"], version["id"], document["id"], True, "platform_admin", "restore",
         )
         with source.read() as connection:
             for table in metadata.sorted_tables:
@@ -137,7 +147,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         assert archive.stat().st_size > 0
         restored = Database(urls[1])
         databases.append(restored)
-        assert restored.check()["revision"] == "0003"
+        assert restored.check()["revision"] == "0004"
         assert IdentityStore(restored).authenticate(member_token)["id"] == member["id"]
         with restored.read() as connection:
             for table in metadata.sorted_tables:
@@ -156,7 +166,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             connection.exec_driver_sql(f'GRANT CONNECT ON DATABASE "{names[1]}" TO {runtime_role}')
             connection.exec_driver_sql(f"GRANT USAGE ON SCHEMA public TO {runtime_role}")
             connection.exec_driver_sql(
-                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events TO {runtime_role}"
+                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events, knowledge_documents, knowledge_chunks TO {runtime_role}"
             )
             connection.exec_driver_sql(f"GRANT SELECT ON alembic_version TO {runtime_role}")
             connection.exec_driver_sql(
@@ -181,6 +191,12 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         with TestClient(create_app(settings, httpx.MockTransport(upstream))) as client:
             headers = {"Authorization": "Bearer " + tenant["api_key"]}
             assert client.get("/health/ready").status_code == 200
+            recovered = client.get(
+                f"/api/v1/applications/{application['id']}/versions/{version['id']}/documents/{document['id']}/chunks",
+                headers={"Authorization": "Bearer " + member_token},
+            )
+            assert recovered.status_code == 200
+            assert recovered.json()["data"][0]["text"] == "恢复后的产品手册"
             published = client.get(
                 f"/api/v1/applications/{application['id']}/versions",
                 headers={"Authorization": "Bearer " + member_token},

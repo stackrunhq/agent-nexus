@@ -30,5 +30,11 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+  worker:
+    environment:
+      NEXUS_DATABASE_URL: ${NEXUS_DATABASE_URL:?Set PostgreSQL URL using host postgres}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
 volumes:
   postgres-data:

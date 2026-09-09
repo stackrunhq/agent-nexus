@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from agent_nexus.knowledge.parsing import ParsedDocument
+from agent_nexus.knowledge.parsing import DocumentError, ParsedDocument
 
 
 @dataclass(frozen=True)
@@ -23,9 +23,19 @@ def chunk_document(document: ParsedDocument, size: int = 1000, overlap: int = 15
     for section in document.sections:
         start = 0
         while start < len(section.text):
+            if len(chunks) >= 10000:
+                raise DocumentError("too_many_chunks")
             end = min(start + size, len(section.text))
-            chunks.append(Chunk(len(chunks), section.text[start:end], section.source_kind,
-                                section.source_index, start, end))
+            chunks.append(
+                Chunk(
+                    len(chunks),
+                    section.text[start:end],
+                    section.source_kind,
+                    section.source_index,
+                    start,
+                    end,
+                )
+            )
             if end == len(section.text):
                 break
             start = end - overlap

@@ -9,3 +9,5 @@ nexus-db import-sqlite --source /absolute/path/old.db
 ```
 
 兼容 `python -m agent_nexus.db_cli check`；也可 `python -m agent_nexus_cli.database check`。均读取相同数据库环境变量，前置条件见 [数据库说明](../docs/DATABASE.md)。
+
+知识库 Worker：`python -m agent_nexus_cli.worker`（持续消费）或追加 `--once`（最多一项）；命令入口 nexus-worker。离线预览：`python -m agent_nexus_cli.document manual.pdf`。两者职责见 [知识库说明](../docs/KNOWLEDGE.md)。

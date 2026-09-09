@@ -11,6 +11,7 @@ agent-nexus/
 │   │   ├── api/                 # HTTP 认证、异常响应、健康检查
 │   │   ├── models/              # 模型配置、调用、协议适配
 │   │   ├── applications/        # 企业应用、版本生命周期与读取权限
+│   │   ├── knowledge/           # 文档 HTTP、持久化队列、解析进程与来源分片
 │   │   ├── identity/            # 个人账号、会话、角色与身份接口
 │   │   ├── tenants/             # 企业凭据、授权、事件
 │   │   ├── storage/             # 连接、表结构、事务、migrations/
@@ -71,3 +72,5 @@ agent-nexus/
 新增业务在 API 中建立同名功能包和测试；服务复杂后再拆 service，不把逻辑堆入 app.py。未来 Worker、SDK 有实际实现时分别创建顶层 worker/、sdk/。当前未实现的技术见 [技术栈与状态](TECH_STACK.md)。
 
 虚拟环境、.tools、build、dist、缓存与 *.egg-info 是本地生成物，data 是运行数据，均不提交。旧 src 可能只剩忽略的 egg-info，不是业务代码，不手工修改。构建前清理已核对的仓库 build 生成目录，避免旧模块进入安装包。
+
+知识库调用链：knowledge/router.py → store.py（归属校验、文档/分片和队列）→ storage/knowledge_schema.py。独立 cli/src/agent_nexus_cli/worker.py → knowledge/jobs.py（领取与超时）→ process.py（子进程资源限制）→ parsing.py/chunking.py。0004_knowledge.py 冻结迁移；api/tests/knowledge/ 对应测试。

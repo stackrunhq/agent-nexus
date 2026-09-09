@@ -1,5 +1,11 @@
 # PostgreSQL 实库与备份恢复演练
 
+## 0004 知识库升级（2026-09-09）
+
+本轮 PostgreSQL 17.11 全量 **95 passed、0 skipped**，包含 13 张业务表的摘要恢复校验。新增原文件 bytea 与来源分片恢复、已发布文档的个人企业身份读取；受限运行角色授权包含 knowledge_documents、knowledge_chunks。临时服务器已停止、生成凭据文件已删除。以下 0001–0003 结果为历史记录。
+
+升级/导入/恢复前停止 API 和 Worker，先备份再升级 0004。文件与数据库一起备份，不依赖单独文件卷；恢复后的 processing 任务由 Worker 在 5 分钟租约到期后重新领取。当前未验证大文件规模的备份性能或生产 RPO/RTO。
+
 ## 本次结果（2026-09-09）
 
 已在 Windows 上运行独立 PostgreSQL 17.11，使用 Python 3.12.14 完成全部测试：**61 passed，0 skipped**。没有依赖 Docker，数据库仅监听 127.0.0.1:55439，演练后已停止。
@@ -28,7 +34,7 @@
 
 2026-09-09 已完成 PostgreSQL 17.11 实库演练，全量 73 passed、0 skipped；恢复后用个人企业成员身份读取已发布版本，并验证受限运行角色及新增应用事件序列。临时服务已停止、生成凭据已删除。
 
-当前业务表为 11 张，新增应用、版本和应用事件。下面的运行角色授权已更新；恢复测试加入已发布版本读取和应用事件序列校验。上面的 0001/0002 结果属于历史记录。
+0003 时业务表为 11 张，新增应用、版本和应用事件。下面的运行角色授权已更新；恢复测试加入已发布版本读取和应用事件序列校验。上面的 0001/0002 结果属于历史记录。
 
 ## 重复执行自动化演练
 
@@ -71,7 +77,7 @@ pg_restore --exit-on-error --single-transaction --no-owner --no-acl --dbname=新
 GRANT CONNECT ON DATABASE nexus TO nexus_app;
 GRANT USAGE ON SCHEMA public TO nexus_app;
 GRANT SELECT, INSERT, UPDATE, DELETE
-ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events TO nexus_app;
+ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events, knowledge_documents, knowledge_chunks TO nexus_app;
 GRANT SELECT ON alembic_version TO nexus_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO nexus_app;
 ```

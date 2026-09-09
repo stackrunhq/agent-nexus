@@ -3,7 +3,7 @@
 面向企业应用的知识库、使用指导与流程规划中台，按阶段实现。
 
 当前版本 **0.3：企业模型接入基础**，提供模型工作台、统一模型 API，以及企业调用凭据和模型授权 API。
-这是单平台开发基础，尚未实现企业多租户隔离、知识库、终端用户帮助中心及流程执行，不能直接作为多租户 SaaS 上线。
+这是企业应用中台的开发基础，已具备企业身份和模型/应用/文档读取隔离、知识库入库 API；终端用户帮助中心、检索问答及流程执行仍待开发，不能直接作为多租户 SaaS 上线。
 
 ## 从哪里阅读代码
 
@@ -48,11 +48,11 @@ docker compose --project-directory . -f docker/compose.yaml up --build -d
 
 ## 企业应用与版本
 
-`/admin/tenants` 已支持按企业创建应用、版本草稿、发布/退役和操作记录。另已提供 TXT/Markdown、文本型 PDF、DOCX 离线解析与来源分片 CLI，见 [知识库解析与预览](docs/KNOWLEDGE.md)。上传入库和后台处理尚未接入；产品版本行为见 [应用版本说明](docs/APPLICATIONS.md)。
+`/admin/tenants` 已支持按企业创建应用、版本草稿、发布/退役和操作记录。另已提供 TXT/Markdown、文本型 PDF、DOCX 离线解析与来源分片 CLI，见 [知识库解析与预览](docs/KNOWLEDGE.md)。文档上传、持久化、独立 Worker 和发布读取 API 已接入，管理页面待开发；产品版本行为见 [应用版本说明](docs/APPLICATIONS.md)。
 
 ## 个人登录与账号管理
 
-先备份并执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0003**。在 `/admin/tenants` 用环境管理员令牌创建第一个平台管理员，再切换“个人账号登录”。支持企业成员绑定、账号启停与重置密码；会话 1 小时到期。完整角色边界见 [个人身份](docs/IDENTITY.md)。
+先备份并执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0004**。在 `/admin/tenants` 用环境管理员令牌创建第一个平台管理员，再切换“个人账号登录”。支持企业成员绑定、账号启停与重置密码；会话 1 小时到期。完整角色边界见 [个人身份](docs/IDENTITY.md)。
 
 ## 原生启动
 

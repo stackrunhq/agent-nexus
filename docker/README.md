@@ -1,6 +1,6 @@
 # 容器部署
 
-**已有 0001/0002 数据库须先备份并升级到 0003。** SQLite：暂停 API 后执行 `docker compose --project-directory . -f docker/compose.yaml run --rm --build api python -m agent_nexus.db_cli upgrade`，再启动 API；PostgreSQL 使用覆盖配置执行 migrate 服务，见 DATABASE.md。
+**已有 0001/0002/0003 数据库须先备份并升级到 0004。** SQLite：暂停 API 和 Worker 后执行 `docker compose --project-directory . -f docker/compose.yaml run --rm --build api python -m agent_nexus.db_cli upgrade`，再启动 API 和 Worker；PostgreSQL 使用覆盖配置执行 migrate 服务，见 DATABASE.md。
 
 以下命令均从仓库根执行，先配置根 .env。显式项目目录保持根环境文件、构建上下文和默认项目名称一致；已有部署使用过 -p 的继续指定原名称，以复用数据卷。
 
@@ -16,3 +16,5 @@ docker build -f docker/Dockerfile -t agent-nexus:local .
 ```
 
 Dockerfile 先用 Node 22 执行 npm ci 和前端构建，再将 API、CLI、原页面及 React 构建资源放入 Python 镜像。.dockerignore 留在根目录，因为根目录是构建上下文。不要在 docker/ 内直接套用这些命令。升级与备份见 [数据库说明](../docs/DATABASE.md)。
+
+Compose 新增独立 worker 服务，使用同一数据库处理知识库队列，原文件随数据库一起备份。没有 Worker 时上传仍会返回 queued；API 就绪检查不检查队列消费。运行机制、原生启动和接口步骤见 [知识库说明](../docs/KNOWLEDGE.md)。本阶段未采用 S3/Redis/Celery。

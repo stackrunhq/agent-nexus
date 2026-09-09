@@ -32,7 +32,9 @@ def digest(connection, table):
     result = hashlib.sha256()
     rows = connection.execute(select(table).order_by(*table.primary_key.columns)).mappings()
     for row in rows:
-        result.update(json.dumps(dict(row), sort_keys=True, ensure_ascii=True).encode())
+        normalized = {key: {"sha256": hashlib.sha256(value).hexdigest(), "bytes": len(value)}
+                      if isinstance(value, (bytes, memoryview)) else value for key, value in row.items()}
+        result.update(json.dumps(normalized, sort_keys=True, ensure_ascii=True).encode())
         result.update(b"\n")
     return result.digest()
 
@@ -78,7 +80,7 @@ def import_sqlite(source_path, target):
                 if table.name not in existing:
                     continue
                 rows = src.execute(select(table)).mappings()
-                while batch := rows.fetchmany(500):
+                while batch := rows.fetchmany(1 if table.name == "knowledge_documents" else 500):
                     if table.name == "models":
                         for row in batch:
                             if ModelConfig.model_validate_json(row["config"]).alias != row["alias"]:
@@ -113,7 +115,7 @@ def main():
             print(json.dumps(check(target)))
         elif args.operation == "upgrade":
             upgrade(target)
-            print("Database upgraded to revision 0003")
+            print("Database upgraded to revision 0004")
         else:
             if not args.source:
                 parser.error("--source is required")
