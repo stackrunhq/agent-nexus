@@ -19,6 +19,7 @@ jobs:
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
       NEXUS_TEST_POSTGRES_URL: postgresql+psycopg://nexus_test:ci-test-only-password@localhost:5432/nexus_test
+      NEXUS_TEST_PG_BIN: /usr/lib/postgresql/17/bin
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,6 +27,16 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install --require-hashes -r requirements.lock
       - run: python -m pip install -e '.[dev]'
+      - name: Install matching PostgreSQL backup tools
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          source /etc/os-release
+          printf 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt %s-pgdg main\n' "$VERSION_CODENAME" | sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_restore --version
       - run: python -m pytest -q
       - run: python -m ruff check --config pyproject.toml src tests
       - run: node --check src/agent_nexus/static/admin.js

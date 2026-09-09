@@ -70,6 +70,6 @@ python -m agent_nexus.db_cli import-sqlite --source /absolute/path/old-nexus.db
 
 SQLite 回归、导入校验和回滚已自动测试。PostgreSQL 集成测试位于 tests/test_postgres.py，只有显式设置 NEXUS_TEST_POSTGRES_URL 才执行；测试会创建并删除独立随机 schema。CI 已配置专用 PostgreSQL 17 服务。
 
-当前机器无 PostgreSQL 服务且 Docker Engine 未运行，因此真实 PostgreSQL 测试尚未执行。此版本仍无 PostgreSQL RLS、企业用户体系、备份自动化或恢复演练，不能直接视为完整多租户生产方案。
+2026-09-09 已通过独立 PostgreSQL 17.11 实库和 pg_dump/pg_restore 演练，并验证受限运行角色。详细结果与复现步骤见 BACKUP_RESTORE.md。Docker Engine 仍未运行；此版本没有 RLS、企业用户体系或生产自动备份，不能直接视为完整多租户生产方案。
 
 实现依据：[SQLAlchemy 事务文档](https://docs.sqlalchemy.org/en/20/core/connections.html)、[Alembic 迁移文档](https://alembic.sqlalchemy.org/en/latest/tutorial.html)。

@@ -11,7 +11,7 @@
 
 当前已完成及下一步清单见 [STATUS.md](docs/STATUS.md)。企业模式启用和接入流程见 [TENANT_ACCESS.md](docs/TENANT_ACCESS.md)。默认 bootstrap 模式仍为原开发模式，企业授权需要显式设置 `NEXUS_AUTH_MODE=tenant`；企业接入 API 不等于完整文档、会话和用户隔离。
 
-本轮已加入 SQLAlchemy、Alembic 及 PostgreSQL 部署/SQLite 导入工具，详见 [DATABASE.md](docs/DATABASE.md)。保持 NEXUS_DATABASE_URL 为空即可继续使用原 SQLite 文件；真实 PostgreSQL 联调尚待完成。
+已加入 SQLAlchemy、Alembic 及 PostgreSQL 部署/SQLite 导入工具，详见 [DATABASE.md](docs/DATABASE.md)。保持 NEXUS_DATABASE_URL 为空即可继续使用原 SQLite 文件；PostgreSQL 17.11 实库及备份恢复已通过，详见 [演练记录](docs/BACKUP_RESTORE.md)。
 
 排查数据库连接及结构可执行 `python -m agent_nexus.db_cli check`。就绪接口不扫描模型记录，结构或版本异常返回 503；详细范围见数据库文档。
 
@@ -136,6 +136,6 @@ python -m ruff check src tests
 - 兼容接口可以配置 `token_parameter` 为 `max_tokens` 或 `max_completion_tokens`；对不支持 temperature 的模型关闭 `supports_temperature`。调用端统一使用 `max_tokens`，网关负责映射。
 - 总调用时限使用 `timeout_seconds`，上游解码后响应最多 8 MiB；超限返回明确错误，不截取成成功答案。
 - 暂无自动重试及跨模型降级，避免重复计费和私有内容意外发送到云端。
-- 已提供 PostgreSQL 存储和迁移代码，SQLite 保留为开发方式；PostgreSQL 实库测试、RLS 和生产恢复演练尚待完成。
+- 已完成 PostgreSQL 实库与基础恢复演练，SQLite 保留为开发方式；RLS、生产规模灾备目标和自动备份尚待完成。
 - 主机允许列表只配置可信端点，生产还需网络出口控制以约束 DNS 变化及内网访问。
 - 响应采用 Nexus 格式，不是完整的第三方 SDK 兼容代理。
