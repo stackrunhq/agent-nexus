@@ -11,7 +11,9 @@
 
 除非用户另行明确要求，不执行 `git push`，不重写已有提交。不要提交 `.env`、真实凭据、数据库、虚拟环境、缓存或生成的 egg-info。
 
+开始开发前阅读 [代码导航](docs/architecture/CODE_MAP.md)。按业务目录放置代码及对应测试，app.py 只负责组装。移动模块后检查导入、CI、包内资源、迁移路径和文档命令；构建前清理仓库内生成的 build 目录，避免旧模块残留进入 wheel。
+
 Python 检查：`python -m pytest -q`、`python -m ruff check --config pyproject.toml src tests`。
-前端脚本检查：`node --check src/agent_nexus/static/admin.js`。
+前端脚本检查：`node --check src/agent_nexus/web/static/admin.js`。
 
 `CHANGELOG.md` 记录代码开发历史；工作台的“配置修改记录”记录运行时模型配置变化，两者用途不同。

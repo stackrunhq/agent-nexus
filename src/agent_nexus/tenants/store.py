@@ -3,8 +3,8 @@ import secrets
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from .database import Database, run
-from .gateway import GatewayError
+from agent_nexus.storage.database import Database, run
+from agent_nexus.core.errors import GatewayError
 
 
 class TenantStore:

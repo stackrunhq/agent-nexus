@@ -16,7 +16,7 @@ dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
 where = ["src"]
 
 [tool.setuptools.package-data]
-agent_nexus = ["static/*.html", "static/*.css", "static/*.js"]
+agent_nexus = ["web/static/*.html", "web/static/*.css", "web/static/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

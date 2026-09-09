@@ -39,5 +39,5 @@ jobs:
           /usr/lib/postgresql/17/bin/pg_restore --version
       - run: python -m pytest -q
       - run: python -m ruff check --config pyproject.toml src tests
-      - run: node --check src/agent_nexus/static/admin.js
+      - run: node --check src/agent_nexus/web/static/admin.js
       - run: docker build -t agent-nexus:test .

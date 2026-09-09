@@ -479,8 +479,8 @@ def test_simultaneous_writers_have_one_winner(setup):
     from concurrent.futures import ThreadPoolExecutor
     from threading import Barrier
 
-    from agent_nexus.schemas import ModelConfig
-    from agent_nexus.store import ConfigurationConflict, ModelStore
+    from agent_nexus.models.schemas import ModelConfig
+    from agent_nexus.models.store import ConfigurationConflict, ModelStore
 
     client, _, _, settings = setup
     original = register(client).json()

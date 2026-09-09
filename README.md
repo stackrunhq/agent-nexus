@@ -5,6 +5,10 @@
 当前版本 **0.3：企业模型接入基础**，提供模型工作台、统一模型 API，以及企业调用凭据和模型授权 API。
 这是单平台开发基础，尚未实现企业多租户隔离、知识库、终端用户帮助中心及流程执行，不能直接作为多租户 SaaS 上线。
 
+## 从哪里阅读代码
+
+从 [app.py](src/agent_nexus/app.py) 查看应用组装，再按业务进入 models、tenants、storage 或 web。完整职责、请求链路和旧路径映射见 [代码导航](docs/architecture/CODE_MAP.md)，所有文档入口见 [文档索引](docs/README.md)。
+
 ## 开发顺序
 
 详细范围见 [路线图](docs/ROADMAP.md)，接口约定见 [统一模型接入](docs/MODEL_GATEWAY.md)。

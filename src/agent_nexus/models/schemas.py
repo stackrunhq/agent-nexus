@@ -1,11 +1,10 @@
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
 
 
-class StrictModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+from agent_nexus.core.schemas import StrictModel
 
 
 class ModelConfig(StrictModel):

@@ -1,5 +1,14 @@
 # 第一阶段验证记录
 
+## 本轮目录重构（2026-09-09）
+
+- pytest：59 passed、2 skipped、2 项既有弃用警告；本轮未启动 PostgreSQL，实库与恢复测试跳过，上一轮 61 项通过属于历史记录。
+- Ruff 与迁移后的 admin.js 语法检查通过。
+- wheel 构建通过；首次构建发现 build 中的旧模块残留，清理该生成目录后重建并确认无旧目录。
+- 从 wheel 解包路径独立导入，验证 SQLite Alembic 升级、数据库 check、健康接口、管理页面/JS/CSS 及模型列表通过。
+- HTTP URL、启动与数据库 CLI 入口保持原约定；内部导入及资源位置映射见 architecture/CODE_MAP.md。
+- Docker 实际启动、真实模型及浏览器视觉交互本轮未验证，未执行远端 CI。
+
 ## PostgreSQL 实库及备份恢复完成（2026-09-09）
 
 - 环境：Windows、Python 3.12.14、独立 PostgreSQL 17.11，仅监听本机 55439。
@@ -52,7 +61,7 @@
 
 - Python 自动化测试：32 项通过，包含原 21 项回归。
 - 新增覆盖：管理员试调用、向量试调用、权限/禁用/输入拒绝、兼容 token 映射、temperature 能力、嵌套畸形响应、8 MiB 限制、慢流总时限及连接关闭、静态页面资源、CSP 和配置接口鉴权、旧配置默认值。
-- Ruff 静态检查通过；`node --check src/agent_nexus/static/admin.js` 通过。
+- Ruff 静态检查通过；`node --check src/agent_nexus/web/static/admin.js` 通过。
 - 0.2.0 wheel 安装包构建成功，确认包含 index.html、admin.css 和 admin.js，可随 Python/Docker 部署交付。
 - Browser 运行时未找到可用浏览器，因此页面视觉和实际点击流程尚未验证。API 和静态资源通过 TestClient 验证，不等价于浏览器交互验证。
 - 未提供真实模型服务，未进行真实供应商联调；Docker 实际启动仍未验证。

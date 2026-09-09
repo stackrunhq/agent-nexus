@@ -68,7 +68,7 @@ python -m agent_nexus.db_cli import-sqlite --source /absolute/path/old-nexus.db
 
 数据库请求异常返回 503 database_unavailable，并提供请求 ID；不要将其视为自动重试写操作的授权。PostgreSQL 连接池等待上限为 5 秒，写事务的锁等待上限为 5 秒，连接建立上限为 10 秒；这些不是完整请求总时限，也不替代查询超时策略。数据库故障诊断与记录内容评估分开进行。
 
-SQLite 回归、导入校验和回滚已自动测试。PostgreSQL 集成测试位于 tests/test_postgres.py，只有显式设置 NEXUS_TEST_POSTGRES_URL 才执行；测试会创建并删除独立随机 schema。CI 已配置专用 PostgreSQL 17 服务。
+SQLite 回归、导入校验和回滚已自动测试。PostgreSQL 集成测试位于 tests/storage/test_postgres.py，只有显式设置 NEXUS_TEST_POSTGRES_URL 才执行；测试会创建并删除独立随机 schema。CI 已配置专用 PostgreSQL 17 服务。
 
 2026-09-09 已通过独立 PostgreSQL 17.11 实库和 pg_dump/pg_restore 演练，并验证受限运行角色。详细结果与复现步骤见 BACKUP_RESTORE.md。Docker Engine 仍未运行；此版本没有 RLS、企业用户体系或生产自动备份，不能直接视为完整多租户生产方案。
 

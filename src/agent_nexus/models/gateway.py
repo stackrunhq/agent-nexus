@@ -8,13 +8,17 @@ import httpx
 from starlette.concurrency import run_in_threadpool
 from pydantic import ValidationError
 
-from .schemas import ChatRequest, ChatResponse, EmbeddingRequest, EmbeddingResponse, Usage
-from .store import ModelStore
+from agent_nexus.models.schemas import (
+    ChatRequest,
+    ChatResponse,
+    EmbeddingRequest,
+    EmbeddingResponse,
+    Usage,
+)
+from agent_nexus.models.store import ModelStore
 
 
-class GatewayError(Exception):
-    def __init__(self, status: int, code: str, message: str):
-        self.status, self.code, self.message = status, code, message
+from agent_nexus.core.errors import GatewayError
 
 
 class Gateway:

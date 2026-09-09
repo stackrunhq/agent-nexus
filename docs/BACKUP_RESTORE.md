@@ -25,7 +25,7 @@
 设置 `NEXUS_TEST_POSTGRES_URL` 为该测试服务器的 SQLAlchemy 连接串，设置 `NEXUS_TEST_PG_BIN` 为 PostgreSQL bin 目录，然后执行：
 
 ```sh
-python -m pytest -q tests/test_postgres.py tests/test_postgres_restore.py
+python -m pytest -q tests/storage/test_postgres.py tests/storage/test_postgres_restore.py
 ```
 
 执行完整回归使用 `python -m pytest -q`。缺少服务器/工具时相关测试会跳过，跳过不等于通过。CI 配置会准备 PostgreSQL 17 与对应客户端，但本次没有推送，未运行远端 CI。

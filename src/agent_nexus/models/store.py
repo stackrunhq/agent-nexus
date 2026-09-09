@@ -1,9 +1,9 @@
 import json
 import hashlib
 from datetime import datetime, timezone
-from .database import Database, run
+from agent_nexus.storage.database import Database, run
 
-from .schemas import ModelConfig
+from agent_nexus.models.schemas import ModelConfig
 
 
 class ConfigurationConflict(Exception):

@@ -15,11 +15,11 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.exc import ProgrammingError
 
 from agent_nexus.app import Settings, create_app
-from agent_nexus.database import Database, metadata
-from agent_nexus.db_cli import digest, upgrade
-from agent_nexus.schemas import ModelConfig
-from agent_nexus.store import ModelStore
-from agent_nexus.tenant_store import TenantStore
+from agent_nexus.storage.database import Database, metadata
+from agent_nexus.storage.cli import digest, upgrade
+from agent_nexus.models.schemas import ModelConfig
+from agent_nexus.models.store import ModelStore
+from agent_nexus.tenants.store import TenantStore
 
 
 def pg_tool(name):
