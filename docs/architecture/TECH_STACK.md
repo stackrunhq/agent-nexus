@@ -4,7 +4,7 @@
 
 | 部分 | 目标 | 位置 | 当前状态 |
 | --- | --- | --- | --- |
-| 管理后台、帮助中心 | React + TypeScript + Vite、Ant Design | web/ | 原生 HTML/JS 管理页；React、帮助中心待开发 |
+| 管理后台、帮助中心 | React + TypeScript + Vite、Ant Design | web/ | React 企业管理页已实现；模型页保留原生，帮助中心待开发 |
 | 嵌入式助手 | TypeScript SDK + iframe | 未来 sdk/ | 待开发 |
 | 后端 API | FastAPI + Pydantic | api/ | 模型、企业接入基础已实现 |
 | 数据访问 | SQLAlchemy + Alembic | API storage/ | 已实现 |
@@ -17,4 +17,4 @@
 | 监控 | 结构化日志 + OpenTelemetry | API 公共设施 | 当前请求 ID 和错误日志，完整追踪待开发 |
 | 运维 | Python CLI | cli/ | 升级、导入、检查 |
 
-下一项业务增量：在 web/ 引入 React 管理后台，先对接现有企业创建、停用、凭据轮换及模型授权接口，再完善个人登录、角色权限和应用版本。知识库、任务及流程按依赖顺序推进。
+React 企业管理及现有企业接口对接已完成；下一项完善个人登录、角色权限和应用版本，并逐步迁移模型页面。知识库、任务及流程按依赖顺序推进。

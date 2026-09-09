@@ -1,5 +1,16 @@
 # 修改日志
 
+## 步骤 12：React 企业管理页面（2026-09-09）
+
+- 最终 wheel 独立验证迁移、健康、模型接口、企业页及 JS/CSS 均通过；限定 Python 包发现，避免把 TypeScript 功能目录作为命名空间包安装。
+- 引入 React、TypeScript、Vite、Ant Design 与 npm 锁文件；功能位于 web/src/app/features/tenants。
+- 新增 /admin/tenants：企业创建、启停、轮换、模型授权/撤销及最近事件；模型工作台增加入口。
+- 管理员令牌只在内存；断开取消请求，凭据弹窗关闭立即卸载，轮换和启停需确认。
+- 接口客户端支持 204，携带请求 ID 的错误提示；bootstrap 模式明确提示调用授权尚未启用。
+- Docker 增加 Node 构建阶段，CI 增加前端检查；企业页面单独放宽内联样式，脚本仍限定同源。
+- 后端 60 passed、2 skipped；前端 5 项通过，类型检查和生产构建通过。未启动 PostgreSQL、Docker 或真实模型，未运行远端 CI。
+- 个人登录、角色权限仍待开发；仅本地 Git 提交，不推送。
+
 ## 步骤 11：顶层 API、前端、CLI 与部署分层（2026-09-09）
 
 - 后端及测试迁至 api/；页面迁至 web/；数据库工具迁至 cli/；容器配置集中 docker/；image/ 明确图片资源职责。

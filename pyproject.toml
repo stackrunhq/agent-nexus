@@ -17,9 +17,10 @@ dev = ["pytest>=8,<10", "ruff>=0.11,<1"]
 
 [tool.setuptools.packages.find]
 where = ["api/src", "cli/src", "web/src"]
+namespaces = false
 
 [tool.setuptools.package-data]
-agent_nexus_web = ["static/*.html", "static/*.css", "static/*.js"]
+agent_nexus_web = ["static/*.html", "static/*.css", "static/*.js", "static/tenants/*.html", "static/tenants/assets/*.css", "static/tenants/assets/*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["api/tests"]

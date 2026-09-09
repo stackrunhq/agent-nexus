@@ -30,9 +30,17 @@ def register_error_handlers(app):
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Cache-Control"] = "no-store"
         if request.url.path.startswith("/admin"):
+            # Ant Design injects component CSS. Script policy remains self-only.
+            style_policy = (
+                "style-src 'self' 'unsafe-inline'; "
+                if request.url.path == "/admin/tenants"
+                or request.url.path.startswith("/admin/assets/tenants/")
+                else "style-src 'self'; "
+            )
             response.headers["Content-Security-Policy"] = (
-                "default-src 'self'; script-src 'self'; style-src 'self'; "
-                "connect-src 'self'; img-src 'self'; frame-ancestors 'none'; "
+                "default-src 'self'; script-src 'self'; "
+                + style_policy
+                + "connect-src 'self'; img-src 'self'; frame-ancestors 'none'; "
                 "base-uri 'none'; form-action 'self'"
             )
         return response

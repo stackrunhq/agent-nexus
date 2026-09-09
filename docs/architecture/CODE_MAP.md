@@ -15,8 +15,10 @@ agent-nexus/
 │   │   ├── web/routes.py        # 挂载前端资源，仅负责 HTTP
 │   │   └── db_cli.py            # 兼容原数据库命令
 │   └── tests/                   # models / tenants / storage 回归
-├── web/                         # 管理前端；未来 React 迁移归属
-│   └── src/agent_nexus_web/static/ # 当前 HTML / JS / CSS
+├── web/                         # React 企业前端与原模型页面
+│   ├── src/app/features/tenants/ # React 企业管理功能与类型
+│   ├── src/app/shared/          # 请求客户端与测试
+│   └── src/agent_nexus_web/static/ # 原模型页面及生成的企业页资源
 ├── cli/                         # 运维命令
 │   └── src/agent_nexus_cli/database.py # 升级、导入、检查
 ├── docker/                      # Dockerfile、compose.yaml 及 PostgreSQL 覆盖
@@ -45,7 +47,8 @@ agent-nexus/
 | 数据库表、连接、事务 | api/src/agent_nexus/storage/database.py |
 | 数据库版本升级 | api/src/agent_nexus/storage/migrations/versions/ |
 | 运维命令 | cli/src/agent_nexus_cli/database.py |
-| 页面交互与样式 | web/src/agent_nexus_web/static/ |
+| 企业页面 | web/src/app/features/tenants/、src/app/style.css |
+| 原模型页面 | web/src/agent_nexus_web/static/ |
 | 容器编排与镜像构建 | docker/ |
 
 调用链：模型路由 → 身份与授权 → 模型网关 → 存储/上游协议 → 统一响应。CLI 复用 API 的存储和迁移，不维护第二份表结构。API 业务不依赖 CLI，db_cli.py 仅兼容命令转发。web 资源通过包资源接口挂载，不依赖工作目录向上查找。

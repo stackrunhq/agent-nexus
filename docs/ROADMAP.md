@@ -22,6 +22,8 @@
 
 顶层分层更新：API、前端、CLI、容器配置已独立目录；React/TypeScript/Vite/Ant Design 在 web/ 中推进，Redis/Celery/S3/pgvector 尚待实现。
 
+React 企业页面增量已完成：创建、启停、轮换凭据、模型授权、事件查看及打包链路；个人用户/角色尚待开发。
+
 ## 02 企业与后台基础
 
 0.3 已先实现企业机器凭据、模型授权/撤销、停用、轮换和调用层授权 API，详见 TENANT_ACCESS.md。用户/角色、企业页面和文档数据隔离尚未完成。当前整体状态见 STATUS.md。

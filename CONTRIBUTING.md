@@ -14,6 +14,8 @@
 开始开发前阅读 [代码导航](docs/architecture/CODE_MAP.md)。按业务目录放置代码及对应测试，app.py 只负责组装。移动模块后检查导入、CI、包内资源、迁移路径和文档命令；构建前清理仓库内生成的 build 目录，避免旧模块残留进入 wheel。
 
 Python 检查：`python -m pytest -q`、`python -m ruff check --config pyproject.toml api cli web`。
-前端脚本检查：`node --check web/src/agent_nexus_web/static/admin.js`。
+React 前端：`npm --prefix web ci`、`npm --prefix web test`、`npm --prefix web run build`；先构建前端再构建 Python wheel，提交 package-lock.json，不提交生成的 tenants 静态目录。
+
+原模型前端脚本检查：`node --check web/src/agent_nexus_web/static/admin.js`。
 
 `CHANGELOG.md` 记录代码开发历史；工作台的“配置修改记录”记录运行时模型配置变化，两者用途不同。

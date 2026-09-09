@@ -13,4 +13,4 @@ docker compose --project-directory . -f docker/compose.yaml config --quiet
 docker build -f docker/Dockerfile -t agent-nexus:local .
 ```
 
-Dockerfile 将 api/src、cli/src、web/src 一起打包。.dockerignore 留在根目录，因为根目录是构建上下文。不要在 docker/ 内直接套用这些命令。升级与备份见 [数据库说明](../docs/DATABASE.md)。
+Dockerfile 先用 Node 22 执行 npm ci 和前端构建，再将 API、CLI、原页面及 React 构建资源放入 Python 镜像。.dockerignore 留在根目录，因为根目录是构建上下文。不要在 docker/ 内直接套用这些命令。升级与备份见 [数据库说明](../docs/DATABASE.md)。

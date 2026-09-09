@@ -37,7 +37,8 @@ docker compose --project-directory . -f docker/compose.yaml up --build -d
 ```
 
 - API 文档：<http://localhost:8000/docs>，可直接测试管理和调用接口。
-- 模型管理工作台：<http://localhost:8000/admin>，无需单独构建前端。
+- 模型管理工作台：<http://localhost:8000/admin>。
+- 企业管理页面：<http://localhost:8000/admin/tenants>，支持创建、启停、轮换凭据、模型授权和事件查看；Docker 自动构建前端。
 - 就绪检查：<http://localhost:8000/health/ready>。
 - 默认只绑定宿主机回环地址。对外部署通过 HTTPS 网关访问并配置限流。
 - 命名卷 `nexus-data` 保存配置，`down -v` 会删除这些数据。
@@ -46,6 +47,8 @@ docker compose --project-directory . -f docker/compose.yaml up --build -d
 - Compose 不安装或下载本地模型。先在独立 Ollama/vLLM 服务准备模型，模型名必须与实际服务一致。
 
 ## 原生启动
+
+企业页面需要 Node 22.12+。先执行 `npm --prefix web ci` 和 `npm --prefix web run build`，再安装或打包 Python 项目。前端开发说明见 [web/README.md](web/README.md)。
 
 需要 Python 3.11+。在项目目录执行：
 
@@ -81,7 +84,7 @@ Linux 使用 `export NEXUS_ADMIN_TOKEN=...` 设置环境，再用 systemd 托管
 6. 在“配置修改记录”按模型别名查询历史，查看时间、变更字段和请求 ID，支持加载更早记录。
 7. 如果保存提示配置冲突，先保留需要的改动，刷新列表并重新点击编辑，核对最新配置后再保存；系统不会自动覆盖他人修改。
 
-页面令牌仅保存在内存，断开或刷新后需重新输入；测试会请求真实模型，可能产生供应商费用。页面使用原生 HTML/CSS/JavaScript 随 Python 包交付，完整企业后台仍按下一阶段引入 React。
+页面令牌仅保存在内存，断开或刷新后需重新输入；测试会请求真实模型，可能产生供应商费用。模型页面暂保留原生实现；企业页面已采用 React/TypeScript/Vite/Ant Design，构建资源随 Python 包交付。个人用户与角色权限仍待开发。
 
 在 `/docs` 的 Authorize 填写管理员令牌，通过 `PUT /api/v1/admin/models/{alias}` 注册模型。完整请求示例见 `examples/`。
 
@@ -127,7 +130,8 @@ Linux 使用 `export NEXUS_ADMIN_TOKEN=...` 设置环境，再用 systemd 托管
 
 ```sh
 python -m pytest -q
-python -m ruff check src tests
+python -m ruff check --config pyproject.toml api cli web
+npm --prefix web test
 ```
 
 测试使用模拟 HTTP 验证协议转换、认证、凭据引用、配置持久化、错误脱敏和向量顺序；真实供应商联调需要可用端点与凭据。

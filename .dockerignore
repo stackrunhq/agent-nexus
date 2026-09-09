@@ -11,3 +11,5 @@ data
 build
 dist
 node_modules
+**/node_modules
+web/src/agent_nexus_web/static/tenants

@@ -10,3 +10,4 @@ data/
 dist/
 build/
 node_modules/
+web/src/agent_nexus_web/static/tenants/
