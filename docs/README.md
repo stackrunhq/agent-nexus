@@ -3,6 +3,8 @@
 | 想了解什么 | 从这里开始 |
 | --- | --- |
 | 如何启动项目 | [项目 README](../README.md) |
+| 目标技术栈与当前实现 | [技术架构](architecture/TECH_STACK.md) |
+| 容器部署入口 | [Docker 说明](../docker/README.md) |
 | 代码在哪、怎么读、怎么扩展 | [代码与目录导航](architecture/CODE_MAP.md) |
 | 已完成哪些功能、下一步做什么 | [当前进度](STATUS.md) |
 | 总体开发阶段与验收目标 | [路线图](ROADMAP.md) |

@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from importlib.resources import files
 from urllib.parse import quote
 
 from alembic import command
@@ -19,7 +20,7 @@ def upgrade(target):
     database = Database(target, prepare=False)
     try:
         config = Config()
-        config.set_main_option("script_location", str(Path(__file__).parent / "migrations"))
+        config.set_main_option("script_location", str(files("agent_nexus.storage.migrations")))
         with database.write("schema") as connection:
             config.attributes["connection"] = connection
             command.upgrade(config, "head")

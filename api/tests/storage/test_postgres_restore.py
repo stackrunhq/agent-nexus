@@ -16,7 +16,7 @@ from sqlalchemy.exc import ProgrammingError
 
 from agent_nexus.app import Settings, create_app
 from agent_nexus.storage.database import Database, metadata
-from agent_nexus.storage.cli import digest, upgrade
+from agent_nexus_cli.database import digest, upgrade
 from agent_nexus.models.schemas import ModelConfig
 from agent_nexus.models.store import ModelStore
 from agent_nexus.tenants.store import TenantStore

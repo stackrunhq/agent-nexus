@@ -2,7 +2,9 @@ FROM python:3.12-slim
 WORKDIR /app
 COPY pyproject.toml ./
 COPY requirements.lock ./
-COPY src ./src
+COPY api/src ./api/src
+COPY cli/src ./cli/src
+COPY web/src ./web/src
 RUN pip install --no-cache-dir --require-hashes -r requirements.lock \
     && pip install --no-cache-dir --no-deps . && useradd --uid 10001 --create-home nexus \
     && mkdir /app/data && chown nexus:nexus /app/data

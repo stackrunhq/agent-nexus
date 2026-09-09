@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from agent_nexus.app import Settings, create_app
 from agent_nexus.storage.database import Database, run
-from agent_nexus.storage.cli import check, import_sqlite, upgrade
+from agent_nexus_cli.database import check, import_sqlite, upgrade
 from agent_nexus.models.schemas import ModelConfig
 from agent_nexus.models.store import ModelStore
 from agent_nexus.tenants.store import TenantStore

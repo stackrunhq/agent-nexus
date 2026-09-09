@@ -7,7 +7,9 @@
 
 ## 从哪里阅读代码
 
-从 [app.py](src/agent_nexus/app.py) 查看应用组装，再按业务进入 models、tenants、storage 或 web。完整职责、请求链路和旧路径映射见 [代码导航](docs/architecture/CODE_MAP.md)，所有文档入口见 [文档索引](docs/README.md)。
+顶层职责：`api/` 后端、`web/` 前端、`cli/` 运维工具、`docker/` 部署、`image/` 项目图片。目标技术栈和当前实现见 [技术架构](docs/architecture/TECH_STACK.md)。目录迁移后已有环境重新执行 `python -m pip install -e '.[dev]'`。
+
+从 [app.py](api/src/agent_nexus/app.py) 查看应用组装，再按业务进入 models、tenants、storage 或 web。完整职责、请求链路和旧路径映射见 [代码导航](docs/architecture/CODE_MAP.md)，所有文档入口见 [文档索引](docs/README.md)。
 
 ## 开发顺序
 
@@ -31,7 +33,7 @@
 需要 Docker Engine 和 Compose。复制 `.env.example` 为 `.env`，填入两个不同的随机令牌（至少 32 字符），并按需要设置允许访问的模型主机和云端密钥。
 
 ```sh
-docker compose up --build -d
+docker compose --project-directory . -f docker/compose.yaml up --build -d
 ```
 
 - API 文档：<http://localhost:8000/docs>，可直接测试管理和调用接口。

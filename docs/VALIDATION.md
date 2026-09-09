@@ -1,5 +1,14 @@
 # 第一阶段验证记录
 
+## 本轮顶层分层验证（2026-09-09）
+
+- pytest：59 passed、2 skipped、2 项既有弃用警告；本轮未启动 PostgreSQL，不将历史实库结果计入本轮。
+- Ruff 检查 api/cli/web、前端 JS 语法、新旧 CLI 帮助入口通过。
+- 重新安装可编辑包生成新源码映射；干净 wheel 包含 API、CLI 和 web 资源。
+- 独立解包运行 SQLite 迁移、check、健康、管理页面及 JS/CSS、模型列表均通过。
+- 根目录指定 --project-directory .，SQLite 和 PostgreSQL 两套 Compose config --quiet 通过；客户端提示用户 Docker config 无读取权限，未影响编排解析。
+- 容器运行、真实模型、浏览器视觉交互和远端 CI 未验证。
+
 ## 本轮目录重构（2026-09-09）
 
 - pytest：59 passed、2 skipped、2 项既有弃用警告；本轮未启动 PostgreSQL，实库与恢复测试跳过，上一轮 61 项通过属于历史记录。
@@ -61,7 +70,7 @@
 
 - Python 自动化测试：32 项通过，包含原 21 项回归。
 - 新增覆盖：管理员试调用、向量试调用、权限/禁用/输入拒绝、兼容 token 映射、temperature 能力、嵌套畸形响应、8 MiB 限制、慢流总时限及连接关闭、静态页面资源、CSP 和配置接口鉴权、旧配置默认值。
-- Ruff 静态检查通过；`node --check src/agent_nexus/web/static/admin.js` 通过。
+- Ruff 静态检查通过；`node --check web/src/agent_nexus_web/static/admin.js` 通过。
 - 0.2.0 wheel 安装包构建成功，确认包含 index.html、admin.css 和 admin.js，可随 Python/Docker 部署交付。
 - Browser 运行时未找到可用浏览器，因此页面视觉和实际点击流程尚未验证。API 和静态资源通过 TestClient 验证，不等价于浏览器交互验证。
 - 未提供真实模型服务，未进行真实供应商联调；Docker 实际启动仍未验证。
@@ -73,7 +82,7 @@
 ## 已完成
 
 - `pytest -q`：21 项测试通过。
-- `ruff check --config pyproject.toml src tests`：通过。
+- `ruff check --config pyproject.toml api cli web`：通过。
 - `docker compose config --quiet`：通过；本机 Docker 客户端提示用户配置文件无读取权限，未影响配置解析。
 - `git diff --check`：通过。
 - 运行依赖已锁定版本及文件哈希。

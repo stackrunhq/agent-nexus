@@ -4,7 +4,7 @@
 
 ## 启用
 
-设置 `NEXUS_AUTH_MODE=tenant` 后重启 API。Docker 修改 `.env` 后运行 `docker compose up -d --force-recreate api`；如需新代码先加 `--build`。
+设置 `NEXUS_AUTH_MODE=tenant` 后重启 API。Docker 修改 `.env` 后运行 `docker compose --project-directory . -f docker/compose.yaml up -d --force-recreate api`；如需新代码先加 `--build`。
 
 - tenant：调用接口只接受数据库中启用企业的有效密钥，忽略 NEXUS_CLIENT_TOKEN。管理员令牌只管理后台，不可调用用户接口。
 - bootstrap（默认）：保留原开发模式，全局调用令牌可访问全部启用模型，企业密钥不用于调用认证。可以先配置企业，再切换 tenant。

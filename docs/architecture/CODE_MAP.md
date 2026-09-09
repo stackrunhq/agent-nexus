@@ -1,72 +1,64 @@
-# 代码阅读与目录导航
+# 顶层目录与代码导航
 
-第一次阅读：先看根目录 README 了解启动方法，再看 `src/agent_nexus/app.py` 的组装过程，然后按业务进入对应目录。当前采用按业务划分的 Python 单体服务，管理页面随服务一起打包。
-
-## 目录职责
+采用模块化单体：顶层按交付职责分区，后端内部按业务功能组织。目前一个 Python 安装包包含 API、CLI 和页面资源，原生与 Docker 使用相同构建产物。
 
 ```text
 agent-nexus/
-├── src/agent_nexus/
-│   ├── app.py                 # 应用工厂：生命周期、依赖组装、注册路由
-│   ├── db_cli.py              # 稳定的数据库命令入口
-│   ├── core/                  # 配置、公共错误、严格请求模型基类
-│   ├── api/                   # HTTP 公共处理：认证、错误响应、健康检查
-│   ├── models/                # 模型业务
-│   │   ├── admin_router.py    # 模型配置、审计、试调用管理接口
-│   │   ├── client_router.py   # 对外模型列表、对话、向量接口
-│   │   ├── schemas.py         # 模型配置与调用请求/响应结构
-│   │   ├── gateway.py         # 云端兼容协议和 Ollama 协议适配
-│   │   └── store.py           # 模型配置、ETag、审计存储
-│   ├── tenants/               # 企业机器凭据与模型授权
-│   │   ├── router.py          # 企业管理接口
-│   │   ├── schemas.py         # 企业请求结构
-│   │   └── store.py           # 凭据摘要、授权、事件存储
-│   ├── storage/               # 数据库连接、表结构、事务和运维工具
-│   │   ├── database.py
-│   │   ├── cli.py             # upgrade / import-sqlite / check 实现
-│   │   └── migrations/        # Alembic 环境与不可随意改写的历史版本
-│   └── web/                   # 内置管理页面
-│       ├── routes.py          # 页面与资源挂载
-│       └── static/            # HTML、CSS、JavaScript
-├── tests/                     # 与业务目录对应
-│   ├── models/                # 模型协议、配置、审计、鉴权接口回归
-│   ├── tenants/               # 企业凭据、授权与越权回归
-│   └── storage/               # SQLite、PostgreSQL、备份恢复
-├── docs/                      # 文档索引见 docs/README.md
-├── examples/                  # 不含真实密钥的模型配置示例
-├── .github/workflows/         # CI 检查与构建
-├── compose.yaml               # 默认 SQLite 部署入口
-├── compose.postgres.yaml      # PostgreSQL 部署入口
-├── Dockerfile                 # 镜像构建入口
-├── pyproject.toml             # Python 包、依赖范围、检查配置
-└── requirements.lock          # 锁定的依赖及校验值
+├── api/                         # 后端 API
+│   ├── src/agent_nexus/
+│   │   ├── app.py               # 生命周期、模块组装和路由注册
+│   │   ├── core/                # 配置、公共错误、请求基类
+│   │   ├── api/                 # HTTP 认证、异常响应、健康检查
+│   │   ├── models/              # 模型配置、调用、协议适配
+│   │   ├── tenants/             # 企业凭据、授权、事件
+│   │   ├── storage/             # 连接、表结构、事务、migrations/
+│   │   ├── web/routes.py        # 挂载前端资源，仅负责 HTTP
+│   │   └── db_cli.py            # 兼容原数据库命令
+│   └── tests/                   # models / tenants / storage 回归
+├── web/                         # 管理前端；未来 React 迁移归属
+│   └── src/agent_nexus_web/static/ # 当前 HTML / JS / CSS
+├── cli/                         # 运维命令
+│   └── src/agent_nexus_cli/database.py # 升级、导入、检查
+├── docker/                      # Dockerfile、compose.yaml 及 PostgreSQL 覆盖
+├── image/                       # 项目图片与来源说明
+├── docs/                        # 文档索引 README.md、架构 architecture/
+├── examples/                    # 无真实凭据的模型配置样例
+├── .github/workflows/           # CI
+├── pyproject.toml               # 三个源码目录的打包、命令、检查配置
+├── requirements.lock            # Python 依赖锁
+├── .env.example                 # 环境变量模板
+└── .dockerignore                # 根构建上下文排除规则
 ```
 
-根目录保留部署和构建入口，方便直接运行现有命令。`.venv-standard/`、`.tools/`、`build/`、`dist/`、`*.egg-info/` 和缓存为本地环境或生成物；`data/` 是运行数据。这些目录不属于业务源码，不提交 Git，也不应手工修改生成的 dependency_links.txt。
+## 阅读顺序和修改入口
 
-## 修改某项功能去哪里找
+先看根 README 的运行方式，再看 api/src/agent_nexus/app.py 的模块装配，然后进入业务 router → schemas → gateway/store，最后看 api/tests 下同名业务测试。
 
-| 任务 | 入口 | 对应验证 |
-| --- | --- | --- |
-| 新增模型供应商协议 | models/gateway.py、schemas.py | tests/models/test_gateway.py |
-| 修改模型管理或试调用 | models/admin_router.py、store.py | tests/models/test_gateway.py |
-| 修改调用权限 | api/auth.py、tenants/store.py | tests/tenants/test_tenants.py |
-| 企业创建、轮换、停用和授权 | tenants/router.py、schemas.py、store.py | tests/tenants/test_tenants.py |
-| 环境变量与启动校验 | core/settings.py、app.py、根目录 .env.example | 模型及企业接口测试 |
-| 错误格式与请求 ID | core/errors.py、api/errors.py | tests/models/test_gateway.py |
-| 数据库表与升级 | storage/database.py、migrations/versions/ | tests/storage/ |
-| 管理页面交互和样式 | web/static/ | JS 语法检查、页面资源及 API 回归 |
+| 修改内容 | 文件位置 |
+| --- | --- |
+| 模型供应商、超时、统一返回 | api/src/agent_nexus/models/gateway.py |
+| 模型配置、审计、试调用 | api/src/agent_nexus/models/admin_router.py、store.py |
+| 对外聊天与向量接口 | api/src/agent_nexus/models/client_router.py |
+| 企业创建、停用、轮换和授权 | api/src/agent_nexus/tenants/router.py、store.py |
+| 请求与响应字段 | 对应业务目录 schemas.py |
+| 身份和模型权限 | api/src/agent_nexus/api/auth.py |
+| 数据库表、连接、事务 | api/src/agent_nexus/storage/database.py |
+| 数据库版本升级 | api/src/agent_nexus/storage/migrations/versions/ |
+| 运维命令 | cli/src/agent_nexus_cli/database.py |
+| 页面交互与样式 | web/src/agent_nexus_web/static/ |
+| 容器编排与镜像构建 | docker/ |
 
-## 请求如何流转
+调用链：模型路由 → 身份与授权 → 模型网关 → 存储/上游协议 → 统一响应。CLI 复用 API 的存储和迁移，不维护第二份表结构。API 业务不依赖 CLI，db_cli.py 仅兼容命令转发。web 资源通过包资源接口挂载，不依赖工作目录向上查找。
 
-对话请求：`app.py` 注册 `models/client_router.py` → `api/auth.py` 识别身份与检查授权 → `models/gateway.py` 读取模型配置并适配上游协议 → 返回统一响应。数据库读取通过业务 `store.py` 使用 `storage/database.py`；异常在 `api/errors.py` 统一转换。
+## 迁移说明
 
-新增业务按职责放入独立包，其请求结构、接口、业务逻辑和存储就近组织，测试使用同名业务目录。`core` 不导入业务模块；业务存储不导入 HTTP 路由；应用工厂负责把公共依赖注入路由。不要把新功能继续堆进 app.py，也不要提前创建尚无实现的空业务目录。
+- src/agent_nexus 移至 api/src/agent_nexus，tests 移至 api/tests。
+- 页面资源移至 web/src/agent_nexus_web/static。
+- 原 agent_nexus.storage.cli 函数移至 agent_nexus_cli.database；外部脚本导入应调整。
+- uvicorn agent_nexus.app:create_app --factory 与 python -m agent_nexus.db_cli 保留；增加 nexus-db 命令。
+- 现有环境重新执行 `python -m pip install -e '.[dev]'` 更新源码映射。
+- Compose 已移至 docker/，从仓库根使用 `docker compose --project-directory . -f docker/compose.yaml ...`。保持根 .env、构建上下文和项目名称推导一致；原先指定过 -p 的继续用同一名称以复用数据卷。
 
-## 兼容性与边界
+新增业务在 API 中建立同名功能包和测试；服务复杂后再拆 service，不把逻辑堆入 app.py。未来 Worker、SDK 有实际实现时分别创建顶层 worker/、sdk/。当前未实现的技术见 [技术栈与状态](TECH_STACK.md)。
 
-HTTP 路径、环境变量、数据库表和版本号保持原约定。现有 `uvicorn agent_nexus.app:create_app --factory` 与 `python -m agent_nexus.db_cli ...` 命令继续使用。
-
-内部 Python 导入已迁移：原 gateway/schemas/store 位于 models，tenant_store 位于 tenants/store，database 位于 storage/database，数据库函数位于 storage/cli。仓库内调用已经更新；若外部脚本直接导入旧内部模块，需要按此映射修改。
-
-本次只重构组织方式。tenants 目前代表企业机器接入，尚无个人用户登录与角色权限；企业管理页面、个人身份及应用版本仍按 STATUS 中的顺序开发。
+虚拟环境、.tools、build、dist、缓存与 *.egg-info 是本地生成物，data 是运行数据，均不提交。旧 src 可能只剩忽略的 egg-info，不是业务代码，不手工修改。构建前清理已核对的仓库 build 生成目录，避免旧模块进入安装包。

@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import make_url
 
 from agent_nexus.storage.database import Database
-from agent_nexus.storage.cli import import_sqlite, upgrade
+from agent_nexus_cli.database import import_sqlite, upgrade
 from agent_nexus.models.store import ConfigurationConflict, ModelStore
 from agent_nexus.tenants.store import TenantStore
 from test_database import seed

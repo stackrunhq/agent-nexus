@@ -14,7 +14,9 @@ services:
       retries: 20
     restart: unless-stopped
   migrate:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
     command: ["python", "-m", "agent_nexus.db_cli", "upgrade"]
     environment:
       NEXUS_DATABASE_URL: ${NEXUS_DATABASE_URL:?Set PostgreSQL URL using host postgres}
