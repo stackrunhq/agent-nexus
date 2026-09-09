@@ -51,6 +51,8 @@ agent-nexus/
 | 运维命令 | cli/src/agent_nexus_cli/database.py |
 | 个人身份与账号页面 | api/src/agent_nexus/identity/、web/src/app/features/users/ |
 | 应用及版本 | api/src/agent_nexus/applications/、web/src/app/features/applications/ |
+| 文档解析与来源分片 | api/src/agent_nexus/knowledge/parsing.py、chunking.py |
+| 文档 JSON 预览命令 | cli/src/agent_nexus_cli/document.py |
 | 企业页面 | web/src/app/features/tenants/、src/app/style.css |
 | 原模型页面 | web/src/agent_nexus_web/static/ |
 | 容器编排与镜像构建 | docker/ |

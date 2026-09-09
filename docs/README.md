@@ -10,6 +10,7 @@
 | 总体开发阶段与验收目标 | [路线图](ROADMAP.md) |
 | 模型协议、配置和调用接口 | [模型网关](MODEL_GATEWAY.md) |
 | 企业应用、版本与发布 | [应用版本](APPLICATIONS.md) |
+| 文档格式、分片与本地预览 | [知识库解析](KNOWLEDGE.md) |
 | 个人登录、账号与角色 | [个人身份](IDENTITY.md) |
 | 企业凭据与模型授权 | [企业接入](TENANT_ACCESS.md) |
 | 数据库部署、迁移、导入与诊断 | [数据库](DATABASE.md) |

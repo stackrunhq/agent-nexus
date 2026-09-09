@@ -48,7 +48,7 @@ docker compose --project-directory . -f docker/compose.yaml up --build -d
 
 ## 企业应用与版本
 
-`/admin/tenants` 已支持按企业创建应用、版本草稿、发布/退役和操作记录。当前只管理产品版本，PDF 等手册解析及分片尚未实现。下一步进入文档入库，详见 [应用版本说明](docs/APPLICATIONS.md)。
+`/admin/tenants` 已支持按企业创建应用、版本草稿、发布/退役和操作记录。另已提供 TXT/Markdown、文本型 PDF、DOCX 离线解析与来源分片 CLI，见 [知识库解析与预览](docs/KNOWLEDGE.md)。上传入库和后台处理尚未接入；产品版本行为见 [应用版本说明](docs/APPLICATIONS.md)。
 
 ## 个人登录与账号管理
 
