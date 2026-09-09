@@ -3,6 +3,7 @@ import { Alert, Button, Form, Input, Modal, Select, Space, Table, Tag } from 'an
 import { AdminClient } from '../../shared/client';
 import type { Credential, Event, Model, Tenant } from './types';
 import { UsersPanel } from '../users/UsersPanel';
+import { ApplicationsPanel } from '../applications/ApplicationsPanel';
 
 const eventNames: Record<string, string> = { created: '创建企业', enabled: '启用', disabled: '停用', key_rotated: '轮换凭据', model_granted: '授权模型', model_revoked: '撤销模型' };
 
@@ -81,6 +82,7 @@ export function TenantPage() {
     {error && <Alert type="error" showIcon message={error} />}
     {connected && <>
       <UsersPanel client={client} tenants={tenants}/>
+      <ApplicationsPanel client={client} tenants={tenants}/>
       {mode !== 'tenant' && <Alert type="warning" showIcon message="当前为 bootstrap 模式：企业凭据和授权尚未用于调用鉴权。请部署管理员启用 tenant 模式。" />}
       <section><h2>企业列表</h2><div className="toolbar"><Form form={createForm} layout="inline" onFinish={({name}) => run(async () => {
         const created = await client.request<Tenant & Credential>('/tenants', 'POST', {name: name.trim()});

@@ -1,12 +1,12 @@
 # 数据库部署与迁移
 
-存储层使用 SQLAlchemy，同时支持 SQLite 和 PostgreSQL（psycopg 驱动）。数据库存模型配置、配置审计、企业、模型授权和企业事件，以及个人账号、会话、账号事件，共 8 张业务表；原机器凭据摘要保持不变。
+存储层使用 SQLAlchemy，同时支持 SQLite 和 PostgreSQL（psycopg 驱动）。数据库存模型配置、配置审计、企业、模型授权和企业事件，以及个人账号、会话、账号事件，以及应用、版本和应用事件，共 11 张业务表；原机器凭据摘要保持不变。
 
 ## 选择数据库
 
 - 不设置 `NEXUS_DATABASE_URL`：使用 `NEXUS_DATABASE_PATH` 的 SQLite 文件，保留开发环境自动创建缺失表的行为。
 - 设置 `NEXUS_DATABASE_URL=postgresql+psycopg://用户名:密码@主机:5432/数据库名`：使用 PostgreSQL，URL 优先于文件路径。用户名、密码中的特殊字符需要 URL 编码，不把真实连接串加入 Git。
-- PostgreSQL 启动前必须迁移至 0002，缺少版本或版本不匹配时 API 拒绝启动。API 不自动执行生产迁移。
+- PostgreSQL 启动前必须迁移至 0003，缺少版本或版本不匹配时 API 拒绝启动。API 不自动执行生产迁移。
 
 ## 原生迁移
 
@@ -19,7 +19,7 @@ uvicorn agent_nexus.app:create_app --factory --host 127.0.0.1 --port 8000
 
 迁移脚本打包在 Python 包内，无需在项目根目录查找 alembic.ini。重复 upgrade 不重复建表。初始迁移允许登记已有已知列布局的 SQLite 数据库，不会覆盖数据；不自动接管未登记版本的 PostgreSQL 表。
 
-SQLite 无版本开发库仍可自动建表；已登记 0001 的库会拒绝启动，先备份并显式 upgrade。0002 新增 users、user_sessions 和 user_events，不改变原五张表。正式升级仍应执行 upgrade。降级删除数据的操作被禁用，回退应使用经过验证的备份。
+SQLite 无版本开发库仍可自动建表；已登记 0001/0002 的库会拒绝启动，先备份并显式 upgrade。0002 新增三张身份表；0003 新增 applications、application_versions、application_events，不改变已有八张表。正式升级仍应执行 upgrade。降级删除数据的操作被禁用，回退应使用经过验证的备份。
 
 ## Docker PostgreSQL
 
@@ -41,7 +41,7 @@ docker compose --project-directory . -f docker/compose.yaml -f docker/compose.po
 ## 从 SQLite 导入
 
 1. 停止旧 API 及所有写入者，备份完整数据库。若使用 WAL，采用 SQLite backup API 或包含已正确检查点的数据，不能只复制正在写入的主文件。
-2. 建立目标 PostgreSQL，并执行 upgrade。目标 8 张业务表必须为空。
+2. 建立目标 PostgreSQL，并执行 upgrade。目标 11 张业务表必须为空。
 3. 将目标连接串放入 NEXUS_DATABASE_URL，执行：
 
 ```sh
@@ -64,7 +64,7 @@ python -m agent_nexus.db_cli import-sqlite --source /absolute/path/old-nexus.db
 
 诊断命令：`python -m agent_nexus.db_cli check`，使用同一套数据库环境变量。成功只返回 backend、revision 和 status；失败退出码为 1，不输出连接串、SQL 参数或凭据。缺失的 SQLite 文件不会被诊断命令创建。
 
-`/health/live` 仅表示进程存活；`/health/ready` 以零行查询核验全部业务表/字段和版本，不扫描或解析模型数据，失败返回 503 database_not_ready。它不验证模型服务、记录内容、数据库写权限或所有索引约束。SQLite 旧库允许 unversioned，已登记库只接受 0002。
+`/health/live` 仅表示进程存活；`/health/ready` 以零行查询核验全部业务表/字段和版本，不扫描或解析模型数据，失败返回 503 database_not_ready。它不验证模型服务、记录内容、数据库写权限或所有索引约束。SQLite 旧库允许 unversioned，已登记库只接受 0003。
 
 数据库请求异常返回 503 database_unavailable，并提供请求 ID；不要将其视为自动重试写操作的授权。PostgreSQL 连接池等待上限为 5 秒，写事务的锁等待上限为 5 秒，连接建立上限为 10 秒；这些不是完整请求总时限，也不替代查询超时策略。数据库故障诊断与记录内容评估分开进行。
 

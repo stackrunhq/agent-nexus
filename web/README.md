@@ -7,6 +7,7 @@
 - src/app/main.tsx：React 入口与主题。
 - src/app/features/tenants/TenantPage.tsx：企业列表、创建、启停、轮换、授权及事件。
 - src/app/features/tenants/types.ts：企业页面数据类型。
+- src/app/features/applications/ApplicationsPanel.tsx：按企业管理应用与版本、发布确认和操作记录。
 - src/app/features/users/UsersPanel.tsx：账号创建、状态、密码重置与安全事件。
 - src/app/shared/client.ts：管理员请求、个人登录/退出、会话到期、204 空响应、错误和断开取消。
 - src/agent_nexus_web/static：原模型页面及打包资源；tenants 子目录是生成物，不手工修改、不提交。

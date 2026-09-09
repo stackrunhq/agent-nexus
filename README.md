@@ -46,9 +46,13 @@ docker compose --project-directory . -f docker/compose.yaml up --build -d
 - 模型服务需要监听容器可访问的地址，结合防火墙限制来源。
 - Compose 不安装或下载本地模型。先在独立 Ollama/vLLM 服务准备模型，模型名必须与实际服务一致。
 
+## 企业应用与版本
+
+`/admin/tenants` 已支持按企业创建应用、版本草稿、发布/退役和操作记录。当前只管理产品版本，PDF 等手册解析及分片尚未实现。下一步进入文档入库，详见 [应用版本说明](docs/APPLICATIONS.md)。
+
 ## 个人登录与账号管理
 
-先备份并执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0002**。在 `/admin/tenants` 用环境管理员令牌创建第一个平台管理员，再切换“个人账号登录”。支持企业成员绑定、账号启停与重置密码；会话 1 小时到期。完整角色边界见 [个人身份](docs/IDENTITY.md)。
+先备份并执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0003**。在 `/admin/tenants` 用环境管理员令牌创建第一个平台管理员，再切换“个人账号登录”。支持企业成员绑定、账号启停与重置密码；会话 1 小时到期。完整角色边界见 [个人身份](docs/IDENTITY.md)。
 
 ## 原生启动
 

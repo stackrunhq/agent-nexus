@@ -17,6 +17,8 @@ from agent_nexus.storage.database import Database
 from agent_nexus.web.routes import mount_admin
 from agent_nexus.identity.store import IdentityStore
 from agent_nexus.identity.router import identity_router
+from agent_nexus.applications.store import ApplicationStore
+from agent_nexus.applications.router import application_router
 
 
 def create_app(settings: Settings | None = None, transport=None):
@@ -30,6 +32,7 @@ def create_app(settings: Settings | None = None, transport=None):
             store = ModelStore(database)
             app.state.tenants = TenantStore(database)
             app.state.identity = IdentityStore(database)
+            app.state.applications = ApplicationStore(database)
             async with httpx.AsyncClient(
                 transport=transport, follow_redirects=False, trust_env=False
             ) as client:
@@ -42,6 +45,7 @@ def create_app(settings: Settings | None = None, transport=None):
     admin_auth, client_auth, allowed_models, authorize_model = authentication(settings)
     register_error_handlers(app)
     app.include_router(health_router())
+    app.include_router(application_router(lambda: app.state.applications, admin_auth, client_auth))
     app.include_router(identity_router(lambda: app.state.identity, admin_auth))
     app.include_router(tenant_router(lambda: app.state.tenants, admin_auth))
     app.include_router(admin_model_router(settings, admin_auth))

@@ -4,7 +4,7 @@
 
 ## 首次使用
 
-1. 备份数据库、停止写入，执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0002**，再启动 API。已登记 0001 的 SQLite 和 PostgreSQL 都必须显式升级；无版本的开发 SQLite 仍可自动建表。
+1. 备份数据库、停止写入，执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0003**，再启动 API。已登记 0001/0002 的 SQLite 和 PostgreSQL 都必须显式升级；无版本的开发 SQLite 仍可自动建表。
 2. 原生部署先执行 `npm --prefix web ci`、`npm --prefix web run build`；Docker 构建自动包含前端。
 3. 打开 `/admin/tenants`，先用环境变量中配置的管理员令牌连接，在“个人账号与角色”中创建第一个平台管理员。
 4. 断开连接，切换“个人账号登录”，输入刚创建的用户名和密码。可创建企业成员、绑定企业，并为该企业授权模型。

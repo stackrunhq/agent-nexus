@@ -24,6 +24,12 @@
 
 当前业务表增至八张，测试现包含个人账号、密码摘要和会话恢复校验；上面的 0001 五表结果为历史记录。受限角色需增加下方三张身份表权限。备份和导入保留会话，正式恢复切换若需全员重新登录，须在维护窗口清理 user_sessions。
 
+## 0003 应用版本升级
+
+2026-09-09 已完成 PostgreSQL 17.11 实库演练，全量 73 passed、0 skipped；恢复后用个人企业成员身份读取已发布版本，并验证受限运行角色及新增应用事件序列。临时服务已停止、生成凭据已删除。
+
+当前业务表为 11 张，新增应用、版本和应用事件。下面的运行角色授权已更新；恢复测试加入已发布版本读取和应用事件序列校验。上面的 0001/0002 结果属于历史记录。
+
 ## 重复执行自动化演练
 
 准备**专用测试服务器**和同版本 pg_dump/pg_restore。测试连接角色需具有创建数据库、schema 和角色的权限；不要指向生产服务器。
@@ -65,7 +71,7 @@ pg_restore --exit-on-error --single-transaction --no-owner --no-acl --dbname=新
 GRANT CONNECT ON DATABASE nexus TO nexus_app;
 GRANT USAGE ON SCHEMA public TO nexus_app;
 GRANT SELECT, INSERT, UPDATE, DELETE
-ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events TO nexus_app;
+ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events TO nexus_app;
 GRANT SELECT ON alembic_version TO nexus_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO nexus_app;
 ```

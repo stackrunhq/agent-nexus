@@ -88,7 +88,7 @@ def import_sqlite(source_path, target):
                 if digest(src, table) != digest(dst, table):
                     raise RuntimeError("Imported table verification failed")
             if not destination.sqlite:
-                for name in ("model_audit", "tenant_events", "user_events"):
+                for name in ("model_audit", "tenant_events", "user_events", "application_events"):
                     run(
                         dst,
                         "SELECT setval(pg_get_serial_sequence(:table, 'id'), "
@@ -113,7 +113,7 @@ def main():
             print(json.dumps(check(target)))
         elif args.operation == "upgrade":
             upgrade(target)
-            print("Database upgraded to revision 0002")
+            print("Database upgraded to revision 0003")
         else:
             if not args.source:
                 parser.error("--source is required")

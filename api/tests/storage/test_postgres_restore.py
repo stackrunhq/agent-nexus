@@ -22,6 +22,8 @@ from agent_nexus.models.store import ModelStore
 from agent_nexus.tenants.store import TenantStore
 from agent_nexus.identity.store import IdentityStore
 from agent_nexus.identity.schemas import UserCreate
+from agent_nexus.applications.store import ApplicationStore
+from agent_nexus.applications.schemas import ApplicationCreate, VersionCreate
 
 
 def pg_tool(name):
@@ -74,6 +76,19 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             "access_token"
         ]
         source_hashes, counts = {}, {}
+        application = ApplicationStore(source).create(
+            tenant["id"], ApplicationCreate(slug="erp", name="ERP"), "platform_admin", "restore"
+        )
+        version = ApplicationStore(source).create_version(
+            tenant["id"],
+            application["id"],
+            VersionCreate(version="1.0"),
+            "platform_admin",
+            "restore",
+        )
+        ApplicationStore(source).transition(
+            tenant["id"], application["id"], version["id"], "published", "platform_admin", "restore"
+        )
         with source.read() as connection:
             for table in metadata.sorted_tables:
                 source_hashes[table.name] = digest(connection, table)
@@ -122,7 +137,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         assert archive.stat().st_size > 0
         restored = Database(urls[1])
         databases.append(restored)
-        assert restored.check()["revision"] == "0002"
+        assert restored.check()["revision"] == "0003"
         assert IdentityStore(restored).authenticate(member_token)["id"] == member["id"]
         with restored.read() as connection:
             for table in metadata.sorted_tables:
@@ -141,7 +156,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             connection.exec_driver_sql(f'GRANT CONNECT ON DATABASE "{names[1]}" TO {runtime_role}')
             connection.exec_driver_sql(f"GRANT USAGE ON SCHEMA public TO {runtime_role}")
             connection.exec_driver_sql(
-                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events TO {runtime_role}"
+                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events TO {runtime_role}"
             )
             connection.exec_driver_sql(f"GRANT SELECT ON alembic_version TO {runtime_role}")
             connection.exec_driver_sql(
@@ -166,6 +181,13 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         with TestClient(create_app(settings, httpx.MockTransport(upstream))) as client:
             headers = {"Authorization": "Bearer " + tenant["api_key"]}
             assert client.get("/health/ready").status_code == 200
+            published = client.get(
+                f"/api/v1/applications/{application['id']}/versions",
+                headers={"Authorization": "Bearer " + member_token},
+            )
+            assert (
+                published.status_code == 200 and published.json()["data"][0]["id"] == version["id"]
+            )
             assert (
                 client.get("/api/v1/models", headers=headers).json()["data"][0]["id"] == model.alias
             )
@@ -176,6 +198,13 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             )
             assert result.status_code == 200 and result.json()["content"] == "restored"
         store = ModelStore(restricted)
+        ApplicationStore(restricted).status(
+            tenant["id"], application["id"], False, "platform_admin", "restore"
+        )
+        assert (
+            ApplicationStore(restricted).events(tenant["id"], application["id"])[0]["id"]
+            > counts["application_events"]
+        )
         store.put(model.model_copy(update={"enabled": False}), expected_etag=store.etag(model))
         TenantStore(restricted).status(tenant["id"], False)
         assert store.audit()["data"][0]["id"] > counts["model_audit"]
