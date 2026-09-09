@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.exceptions import HTTPException
 from starlette.concurrency import run_in_threadpool
+from sqlalchemy.exc import SQLAlchemyError
 
 from .gateway import Gateway, GatewayError
 from .schemas import ChatRequest, ChatResponse, EmbeddingRequest, EmbeddingResponse, ModelConfig
@@ -163,6 +164,20 @@ def create_app(settings: Settings | None = None, transport=None):
             },
         )
 
+    @app.exception_handler(SQLAlchemyError)
+    async def database_error(request: Request, exc: SQLAlchemyError):
+        logging.getLogger(__name__).error("Database request failed id=%s", request.state.request_id)
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": {
+                    "code": "database_unavailable",
+                    "message": "Database operation unavailable",
+                },
+                "request_id": request.state.request_id,
+            },
+        )
+
     @app.exception_handler(RequestValidationError)
     async def validation_error(request: Request, exc: RequestValidationError):
         # Do not echo user prompts, credentials or raw validator input.
@@ -194,7 +209,12 @@ def create_app(settings: Settings | None = None, transport=None):
 
     @app.get("/health/ready")
     def ready(request: Request):
-        request.app.state.gateway.store.list()
+        try:
+            request.app.state.gateway.store.database.check()
+        except (SQLAlchemyError, RuntimeError):
+            raise GatewayError(
+                503, "database_not_ready", "Database schema or connection is not ready"
+            ) from None
         return {"status": "ok"}
 
     @app.get("/admin", include_in_schema=False)

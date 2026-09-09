@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from agent_nexus.app import Settings, create_app
 from agent_nexus.database import Database, run
-from agent_nexus.db_cli import import_sqlite, upgrade
+from agent_nexus.db_cli import check, import_sqlite, upgrade
 from agent_nexus.schemas import ModelConfig
 from agent_nexus.store import ModelStore
 from agent_nexus.tenant_store import TenantStore
@@ -117,3 +117,51 @@ def test_import_source_path_with_uri_characters(tmp_path):
     source = str(tmp_path / "知识库 #1.db")
     seed(source)
     assert import_sqlite(source, str(tmp_path / "target.db"))["models"] == 1
+
+
+def test_diagnostics_do_not_create_missing_database(tmp_path):
+    missing = tmp_path / "missing" / "db.sqlite"
+    for target in (str(missing), "sqlite:///" + missing.as_posix()):
+        with pytest.raises(ValueError, match="exist"):
+            check(target)
+    assert not missing.parent.exists()
+
+
+def test_diagnostics_report_revision_without_parsing_model_data(tmp_path):
+    path = str(tmp_path / "db.sqlite")
+    seed(path)
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE models SET config = 'intentionally malformed'")
+    before = hashlib.sha256((tmp_path / "db.sqlite").read_bytes()).digest()
+    assert check(path) == {"status": "ok", "backend": "sqlite", "revision": "unversioned"}
+    assert hashlib.sha256((tmp_path / "db.sqlite").read_bytes()).digest() == before
+    upgrade(path)
+    assert check(path)["revision"] == "0001"
+
+
+def test_readiness_detects_missing_table_and_recovers(tmp_path):
+    path = str(tmp_path / "db.sqlite")
+    settings = Settings("a" * 32, "b" * 32, path, set())
+    with TestClient(create_app(settings)) as client:
+        with sqlite3.connect(path) as db:
+            db.execute("ALTER TABLE tenant_events RENAME TO temporarily_missing")
+        response = client.get("/health/ready")
+        assert response.status_code == 503
+        assert response.json()["error"]["code"] == "database_not_ready"
+        assert "tenant_events" not in response.text and path not in response.text
+        assert response.headers["x-request-id"] == response.json()["request_id"]
+        assert client.get("/health/live").status_code == 200
+        with sqlite3.connect(path) as db:
+            db.execute("ALTER TABLE temporarily_missing RENAME TO tenant_events")
+        assert client.get("/health/ready").status_code == 200
+
+
+def test_readiness_rejects_changed_schema_revision(tmp_path):
+    path = str(tmp_path / "db.sqlite")
+    upgrade(path)
+    with TestClient(create_app(Settings("a" * 32, "b" * 32, path, set()))) as client:
+        with sqlite3.connect(path) as db:
+            db.execute("UPDATE alembic_version SET version_num = 'future'")
+        assert client.get("/health/ready").status_code == 503
+        with pytest.raises(RuntimeError, match="revision"):
+            check(path)

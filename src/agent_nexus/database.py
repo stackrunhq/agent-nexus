@@ -14,6 +14,8 @@ from sqlalchemy import (
     Text,
     create_engine,
     event,
+    inspect,
+    select,
     text,
 )
 from sqlalchemy.engine import URL, make_url
@@ -85,7 +87,7 @@ class Database:
         options = (
             {"connect_args": {"timeout": 10}, "poolclass": NullPool}
             if self.sqlite
-            else {"pool_pre_ping": True, "connect_args": {"connect_timeout": 10}}
+            else {"pool_pre_ping": True, "pool_timeout": 5, "connect_args": {"connect_timeout": 10}}
         )
         self.engine = create_engine(url, hide_parameters=True, **options)
         if self.sqlite:
@@ -116,12 +118,32 @@ class Database:
         with self.engine.connect() as db:
             yield db
 
+    def check(self):
+        """Check required columns without scanning or parsing business records."""
+        with self.read() as db:
+            for table in metadata.sorted_tables:
+                db.execute(select(table).limit(0)).close()
+            if inspect(db).has_table("alembic_version"):
+                revision = run(db, "SELECT version_num FROM alembic_version").scalar_one()
+                if revision != "0001":
+                    raise RuntimeError("Unsupported schema revision")
+            elif self.sqlite:
+                revision = "unversioned"
+            else:
+                raise RuntimeError("Missing schema revision")
+        return {
+            "status": "ok",
+            "backend": "sqlite" if self.sqlite else "postgresql",
+            "revision": revision,
+        }
+
     @contextmanager
     def write(self, key: str):
         with self.engine.begin() as db:
             if self.sqlite:
                 db.exec_driver_sql("BEGIN IMMEDIATE")
             else:
+                run(db, "SELECT set_config('lock_timeout', '5000', true)")
                 lock = int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], "big", signed=True)
                 run(db, "SELECT pg_advisory_xact_lock(:key)", key=lock)
             yield db

@@ -404,7 +404,10 @@ def test_audit_failure_rolls_back_model_change(setup):
         db.execute(
             "CREATE TRIGGER reject_audit BEFORE INSERT ON model_audit BEGIN SELECT RAISE(ABORT, 'test'); END"
         )
-    assert register(client, enabled=False).status_code == 500
+    response = register(client, enabled=False)
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "database_unavailable"
+    assert "reject_audit" not in response.text
     assert client.get("/api/v1/admin/models", headers=ADMIN).json()[0]["enabled"] is True
 
 

@@ -13,6 +13,8 @@
 
 本轮已加入 SQLAlchemy、Alembic 及 PostgreSQL 部署/SQLite 导入工具，详见 [DATABASE.md](docs/DATABASE.md)。保持 NEXUS_DATABASE_URL 为空即可继续使用原 SQLite 文件；真实 PostgreSQL 联调尚待完成。
 
+排查数据库连接及结构可执行 `python -m agent_nexus.db_cli check`。就绪接口不扫描模型记录，结构或版本异常返回 503；详细范围见数据库文档。
+
 1. **当前阶段**：工程、模型配置、云端/本地协议适配、鉴权、测试、部署配置。
 2. 企业基础：PostgreSQL、迁移、企业/客户组织/用户权限、企业模型授权、React 管理后台。
 3. 知识库：文档处理、版本发布、中文混合检索、引用问答。

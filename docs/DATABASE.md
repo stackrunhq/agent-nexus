@@ -62,6 +62,12 @@ python -m agent_nexus.db_cli import-sqlite --source /absolute/path/old-nexus.db
 
 ## 验证与限制
 
+诊断命令：`python -m agent_nexus.db_cli check`，使用同一套数据库环境变量。成功只返回 backend、revision 和 status；失败退出码为 1，不输出连接串、SQL 参数或凭据。缺失的 SQLite 文件不会被诊断命令创建。
+
+`/health/live` 仅表示进程存活；`/health/ready` 以零行查询核验全部业务表/字段和版本，不扫描或解析模型数据，失败返回 503 database_not_ready。它不验证模型服务、记录内容、数据库写权限或所有索引约束。SQLite 旧库允许 unversioned，已登记库只接受 0001。
+
+数据库请求异常返回 503 database_unavailable，并提供请求 ID；不要将其视为自动重试写操作的授权。PostgreSQL 连接池等待上限为 5 秒，写事务的锁等待上限为 5 秒，连接建立上限为 10 秒；这些不是完整请求总时限，也不替代查询超时策略。数据库故障诊断与记录内容评估分开进行。
+
 SQLite 回归、导入校验和回滚已自动测试。PostgreSQL 集成测试位于 tests/test_postgres.py，只有显式设置 NEXUS_TEST_POSTGRES_URL 才执行；测试会创建并删除独立随机 schema。CI 已配置专用 PostgreSQL 17 服务。
 
 当前机器无 PostgreSQL 服务且 Docker Engine 未运行，因此真实 PostgreSQL 测试尚未执行。此版本仍无 PostgreSQL RLS、企业用户体系、备份自动化或恢复演练，不能直接视为完整多租户生产方案。

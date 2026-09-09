@@ -101,12 +101,14 @@ def import_sqlite(source_path, target):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=["upgrade", "import-sqlite"])
+    parser.add_argument("operation", choices=["upgrade", "import-sqlite", "check"])
     parser.add_argument("--source", help="Existing SQLite file; required for import-sqlite")
     args = parser.parse_args()
     target = os.getenv("NEXUS_DATABASE_URL") or os.getenv("NEXUS_DATABASE_PATH", "data/nexus.db")
     try:
-        if args.operation == "upgrade":
+        if args.operation == "check":
+            print(json.dumps(check(target)))
+        elif args.operation == "upgrade":
             upgrade(target)
             print("Database upgraded to revision 0001")
         else:
@@ -119,6 +121,23 @@ def main():
             1,
             "Database operation failed. Check connectivity, schema and empty target; no credentials are printed.\n",
         )
+
+
+def check(target):
+    # Do not create a SQLite file or its parent directories during diagnostics.
+    if "://" not in target and not Path(target).is_file():
+        raise ValueError("SQLite database does not exist")
+    if target.startswith("sqlite:"):
+        from sqlalchemy.engine import make_url
+
+        url = make_url(target)
+        if url.query or not url.database or not Path(url.database).is_file():
+            raise ValueError("Use an existing ordinary SQLite file for diagnostics")
+    database = Database(target, prepare=False)
+    try:
+        return database.check()
+    finally:
+        database.close()
 
 
 if __name__ == "__main__":
