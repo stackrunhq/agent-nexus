@@ -20,6 +20,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.pool import NullPool
+from .identity_schema import define_identity_tables
 
 metadata = MetaData()
 models = Table(
@@ -65,6 +66,9 @@ tenant_events = Table(
 )
 
 
+define_identity_tables(metadata)
+
+
 def connection_url(target: str):
     if "://" not in target:
         path = Path(target).resolve()
@@ -101,11 +105,16 @@ class Database:
                 if self.sqlite:
                     # Preserve the zero-setup development path, including legacy databases.
                     with self.write("schema") as db:
+                        if inspect(db).has_table("alembic_version") and (
+                            run(db, "SELECT version_num FROM alembic_version").scalar_one()
+                            != "0002"
+                        ):
+                            raise RuntimeError("Run the explicit schema upgrade first")
                         metadata.create_all(db)
                 else:
                     with self.read() as db:
                         revision = run(db, "SELECT version_num FROM alembic_version").scalar_one()
-                        if revision != "0001":
+                        if revision != "0002":
                             raise RuntimeError("Database schema is not at the supported revision")
             except Exception:
                 self.engine.dispose()
@@ -125,7 +134,7 @@ class Database:
                 db.execute(select(table).limit(0)).close()
             if inspect(db).has_table("alembic_version"):
                 revision = run(db, "SELECT version_num FROM alembic_version").scalar_one()
-                if revision != "0001":
+                if revision != "0002":
                     raise RuntimeError("Unsupported schema revision")
             elif self.sqlite:
                 revision = "unversioned"

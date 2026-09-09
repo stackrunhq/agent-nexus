@@ -10,6 +10,7 @@ agent-nexus/
 │   │   ├── core/                # 配置、公共错误、请求基类
 │   │   ├── api/                 # HTTP 认证、异常响应、健康检查
 │   │   ├── models/              # 模型配置、调用、协议适配
+│   │   ├── identity/            # 个人账号、会话、角色与身份接口
 │   │   ├── tenants/             # 企业凭据、授权、事件
 │   │   ├── storage/             # 连接、表结构、事务、migrations/
 │   │   ├── web/routes.py        # 挂载前端资源，仅负责 HTTP
@@ -47,6 +48,7 @@ agent-nexus/
 | 数据库表、连接、事务 | api/src/agent_nexus/storage/database.py |
 | 数据库版本升级 | api/src/agent_nexus/storage/migrations/versions/ |
 | 运维命令 | cli/src/agent_nexus_cli/database.py |
+| 个人身份与账号页面 | api/src/agent_nexus/identity/、web/src/app/features/users/ |
 | 企业页面 | web/src/app/features/tenants/、src/app/style.css |
 | 原模型页面 | web/src/agent_nexus_web/static/ |
 | 容器编排与镜像构建 | docker/ |

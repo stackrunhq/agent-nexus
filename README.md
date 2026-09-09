@@ -46,6 +46,10 @@ docker compose --project-directory . -f docker/compose.yaml up --build -d
 - 模型服务需要监听容器可访问的地址，结合防火墙限制来源。
 - Compose 不安装或下载本地模型。先在独立 Ollama/vLLM 服务准备模型，模型名必须与实际服务一致。
 
+## 个人登录与账号管理
+
+先备份并执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0002**。在 `/admin/tenants` 用环境管理员令牌创建第一个平台管理员，再切换“个人账号登录”。支持企业成员绑定、账号启停与重置密码；会话 1 小时到期。完整角色边界见 [个人身份](docs/IDENTITY.md)。
+
 ## 原生启动
 
 企业页面需要 Node 22.12+。先执行 `npm --prefix web ci` 和 `npm --prefix web run build`，再安装或打包 Python 项目。前端开发说明见 [web/README.md](web/README.md)。
@@ -84,7 +88,7 @@ Linux 使用 `export NEXUS_ADMIN_TOKEN=...` 设置环境，再用 systemd 托管
 6. 在“配置修改记录”按模型别名查询历史，查看时间、变更字段和请求 ID，支持加载更早记录。
 7. 如果保存提示配置冲突，先保留需要的改动，刷新列表并重新点击编辑，核对最新配置后再保存；系统不会自动覆盖他人修改。
 
-页面令牌仅保存在内存，断开或刷新后需重新输入；测试会请求真实模型，可能产生供应商费用。模型页面暂保留原生实现；企业页面已采用 React/TypeScript/Vite/Ant Design，构建资源随 Python 包交付。个人用户与角色权限仍待开发。
+页面令牌仅保存在内存，断开或刷新后需重新输入；测试会请求真实模型，可能产生供应商费用。模型页面暂保留原生实现；企业页面已采用 React/TypeScript/Vite/Ant Design，构建资源随 Python 包交付。基础个人账号与两种角色已实现，更细组织权限仍待开发。
 
 在 `/docs` 的 Authorize 填写管理员令牌，通过 `PUT /api/v1/admin/models/{alias}` 注册模型。完整请求示例见 `examples/`。
 

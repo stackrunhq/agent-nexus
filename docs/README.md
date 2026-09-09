@@ -9,6 +9,7 @@
 | 已完成哪些功能、下一步做什么 | [当前进度](STATUS.md) |
 | 总体开发阶段与验收目标 | [路线图](ROADMAP.md) |
 | 模型协议、配置和调用接口 | [模型网关](MODEL_GATEWAY.md) |
+| 个人登录、账号与角色 | [个人身份](IDENTITY.md) |
 | 企业凭据与模型授权 | [企业接入](TENANT_ACCESS.md) |
 | 数据库部署、迁移、导入与诊断 | [数据库](DATABASE.md) |
 | PostgreSQL 备份恢复操作 | [恢复演练](BACKUP_RESTORE.md) |

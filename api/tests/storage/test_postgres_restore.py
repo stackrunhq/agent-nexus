@@ -20,6 +20,8 @@ from agent_nexus_cli.database import digest, upgrade
 from agent_nexus.models.schemas import ModelConfig
 from agent_nexus.models.store import ModelStore
 from agent_nexus.tenants.store import TenantStore
+from agent_nexus.identity.store import IdentityStore
+from agent_nexus.identity.schemas import UserCreate
 
 
 def pg_tool(name):
@@ -59,6 +61,18 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         ModelStore(source).put(model)
         tenant = TenantStore(source).create("恢复演练企业")
         TenantStore(source).grant(tenant["id"], model.alias, True)
+        member = IdentityStore(source).create(
+            UserCreate(
+                username="restore-member",
+                password="restore-test-password",
+                role="tenant_user",
+                tenant_id=tenant["id"],
+            ),
+            "platform_admin",
+        )
+        member_token = IdentityStore(source).login("restore-member", "restore-test-password")[
+            "access_token"
+        ]
         source_hashes, counts = {}, {}
         with source.read() as connection:
             for table in metadata.sorted_tables:
@@ -108,7 +122,8 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         assert archive.stat().st_size > 0
         restored = Database(urls[1])
         databases.append(restored)
-        assert restored.check()["revision"] == "0001"
+        assert restored.check()["revision"] == "0002"
+        assert IdentityStore(restored).authenticate(member_token)["id"] == member["id"]
         with restored.read() as connection:
             for table in metadata.sorted_tables:
                 assert digest(connection, table) == source_hashes[table.name]
@@ -126,7 +141,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             connection.exec_driver_sql(f'GRANT CONNECT ON DATABASE "{names[1]}" TO {runtime_role}')
             connection.exec_driver_sql(f"GRANT USAGE ON SCHEMA public TO {runtime_role}")
             connection.exec_driver_sql(
-                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events TO {runtime_role}"
+                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events TO {runtime_role}"
             )
             connection.exec_driver_sql(f"GRANT SELECT ON alembic_version TO {runtime_role}")
             connection.exec_driver_sql(

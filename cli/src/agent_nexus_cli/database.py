@@ -59,7 +59,9 @@ def import_sqlite(source_path, target):
             if not destination.sqlite:
                 # Prevent live writers from racing the empty-target check and sequence reset.
                 dst.exec_driver_sql(
-                    "LOCK TABLE models, model_audit, tenants, tenant_models, tenant_events IN ACCESS EXCLUSIVE MODE"
+                    "LOCK TABLE "
+                    + ", ".join(table.name for table in tables)
+                    + " IN ACCESS EXCLUSIVE MODE"
                 )
             if any(
                 dst.execute(select(func.count()).select_from(table)).scalar_one()
@@ -86,7 +88,7 @@ def import_sqlite(source_path, target):
                 if digest(src, table) != digest(dst, table):
                     raise RuntimeError("Imported table verification failed")
             if not destination.sqlite:
-                for name in ("model_audit", "tenant_events"):
+                for name in ("model_audit", "tenant_events", "user_events"):
                     run(
                         dst,
                         "SELECT setval(pg_get_serial_sequence(:table, 'id'), "
@@ -111,7 +113,7 @@ def main():
             print(json.dumps(check(target)))
         elif args.operation == "upgrade":
             upgrade(target)
-            print("Database upgraded to revision 0001")
+            print("Database upgraded to revision 0002")
         else:
             if not args.source:
                 parser.error("--source is required")

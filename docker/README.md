@@ -1,5 +1,7 @@
 # 容器部署
 
+**已有 0001 数据库须先备份并升级到 0002。** SQLite：暂停 API 后执行 `docker compose --project-directory . -f docker/compose.yaml run --rm --build api python -m agent_nexus.db_cli upgrade`，再启动 API；PostgreSQL 使用覆盖配置执行 migrate 服务，见 DATABASE.md。
+
 以下命令均从仓库根执行，先配置根 .env。显式项目目录保持根环境文件、构建上下文和默认项目名称一致；已有部署使用过 -p 的继续指定原名称，以复用数据卷。
 
 ```sh

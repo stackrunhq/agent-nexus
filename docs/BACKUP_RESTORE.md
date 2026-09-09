@@ -18,6 +18,12 @@
 
 这不是生产规模灾备认证：没有测量大数据量恢复时间、RPO/RTO、跨机恢复、PITR 或高可用切换。Docker 部署和真实模型联调仍待验证。
 
+## 0002 身份数据升级
+
+2026-09-09 本轮已在独立 PostgreSQL 17.11 再次执行全量测试：69 passed、0 skipped。包含个人账号、密码摘要、会话恢复，以及八表和受限运行角色校验。测试后服务器已停止，临时凭据文件已移除。
+
+当前业务表增至八张，测试现包含个人账号、密码摘要和会话恢复校验；上面的 0001 五表结果为历史记录。受限角色需增加下方三张身份表权限。备份和导入保留会话，正式恢复切换若需全员重新登录，须在维护窗口清理 user_sessions。
+
 ## 重复执行自动化演练
 
 准备**专用测试服务器**和同版本 pg_dump/pg_restore。测试连接角色需具有创建数据库、schema 和角色的权限；不要指向生产服务器。
@@ -59,11 +65,11 @@ pg_restore --exit-on-error --single-transaction --no-owner --no-acl --dbname=新
 GRANT CONNECT ON DATABASE nexus TO nexus_app;
 GRANT USAGE ON SCHEMA public TO nexus_app;
 GRANT SELECT, INSERT, UPDATE, DELETE
-ON models, model_audit, tenants, tenant_models, tenant_events TO nexus_app;
+ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events TO nexus_app;
 GRANT SELECT ON alembic_version TO nexus_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO nexus_app;
 ```
 
-目标 schema 不应向 PUBLIC 开放 CREATE（PostgreSQL 17 新库的默认权限符合本次演练）。已有数据库需另行检查权限。本模板不是企业数据行级隔离；RLS、个人身份、不可篡改审计和后续新增表的授权仍需设计。Compose 当前仍使用简化的统一数据库账户，生产落地需拆分迁移与 API 连接凭据。
+目标 schema 不应向 PUBLIC 开放 CREATE（PostgreSQL 17 新库的默认权限符合本次演练）。已有数据库需另行检查权限。本模板不是企业数据行级隔离；基础个人身份已在 0002 实现；RLS、不可篡改审计和后续新增表授权仍需设计。Compose 当前仍使用简化的统一数据库账户，生产落地需拆分迁移与 API 连接凭据。
 
 依据：[PostgreSQL 17 pg_restore](https://www.postgresql.org/docs/17/app-pgrestore.html)、[PostgreSQL Windows 二进制说明](https://www.postgresql.org/download/windows/)。

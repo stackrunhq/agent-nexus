@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Form, Input, Modal, Select, Space, Table, Tag } from 'antd';
 import { AdminClient } from '../../shared/client';
 import type { Credential, Event, Model, Tenant } from './types';
+import { UsersPanel } from '../users/UsersPanel';
 
 const eventNames: Record<string, string> = { created: '创建企业', enabled: '启用', disabled: '停用', key_rotated: '轮换凭据', model_granted: '授权模型', model_revoked: '撤销模型' };
 
@@ -22,6 +23,7 @@ export function TenantPage() {
   const [credential, setCredential] = useState<Credential>();
   const [confirmation, setConfirmation] = useState<{ tenant: Tenant; rotate: boolean }>();
   const [mode, setMode] = useState('');
+  const [loginMode, setLoginMode] = useState('token');
   const [loginForm] = Form.useForm();
   const [createForm] = Form.useForm();
 
@@ -32,6 +34,10 @@ export function TenantPage() {
     setError(''); setAlias(undefined); setMode(''); loginForm.resetFields(); createForm.resetFields();
     lock.current = false; setBusy(false);
   }
+  useEffect(() => {
+    client.onExpired = () => { disconnect(); setError('个人会话已失效，请重新登录。'); };
+    return () => { client.onExpired = undefined; client.disconnect(); };
+  }, [client]);
   async function run(work: () => Promise<void>) {
     if (lock.current) return;
     lock.current = true; setBusy(true); setError('');
@@ -55,8 +61,10 @@ export function TenantPage() {
   }
   return <main className="tenant-page">
     <header><div><h1>企业管理</h1><p>管理企业接入凭据与可调用的模型。</p></div><nav><a href="/admin">模型工作台</a><a href="/docs">API 文档</a></nav></header>
-    <section><h2>管理员连接</h2>{!connected ? <Form form={loginForm} layout="inline" onFinish={({token}) => run(async () => {
-      client.connect(token);
+    <section><h2>管理员连接</h2>{!connected ? <><Select aria-label="登录方式" value={loginMode} disabled={busy} onChange={value => {setLoginMode(value); loginForm.resetFields();}} options={[{value: 'token', label: '管理员令牌（初始接入）'}, {value: 'account', label: '个人账号登录'}]} />
+    <Form form={loginForm} layout="inline" onFinish={({token, username, password}) => run(async () => {
+      if (loginMode === 'account') await client.login(username, password);
+      else client.connect(token);
       try {
         const [settings, list, modelList] = await Promise.all([
           client.request<{auth_mode: string}>('/settings'), client.request<{data: Tenant[]}>('/tenants'), client.request<Model[]>('/models'),
@@ -64,11 +72,15 @@ export function TenantPage() {
         setMode(settings.auth_mode); setTenants(list.data); setModels(modelList); setConnected(true); loginForm.resetFields();
       } catch (e) { client.disconnect(); throw e; }
     })}>
-      <Form.Item name="token" label="管理员令牌" rules={[{required: true, min: 32}]}><Input.Password autoComplete="off" disabled={busy}/></Form.Item>
+      {loginMode === 'token' ? <Form.Item name="token" label="管理员令牌" rules={[{required: true, min: 32}]}><Input.Password autoComplete="off" disabled={busy}/></Form.Item> : <>
+        <Form.Item name="username" label="用户名" rules={[{required: true}]}><Input autoComplete="username" disabled={busy}/></Form.Item>
+        <Form.Item name="password" label="密码" rules={[{required: true}]}><Input.Password autoComplete="current-password" disabled={busy}/></Form.Item>
+      </>}
       <Button htmlType="submit" type="primary" loading={busy}>连接</Button>
-    </Form> : <Space><span>已连接 · 令牌仅保存在当前页面内存中</span><Button onClick={disconnect}>断开连接</Button></Space>}</section>
+    </Form></> : <Space><span>已连接 · 会话仅保存在当前页面内存中</span><Button onClick={() => { const revocation = client.logout(); disconnect(); void revocation.catch(() => setError('本地已断开，服务端退出未确认；会话将在到期后失效。')); }}>断开连接</Button></Space>}</section>
     {error && <Alert type="error" showIcon message={error} />}
     {connected && <>
+      <UsersPanel client={client} tenants={tenants}/>
       {mode !== 'tenant' && <Alert type="warning" showIcon message="当前为 bootstrap 模式：企业凭据和授权尚未用于调用鉴权。请部署管理员启用 tenant 模式。" />}
       <section><h2>企业列表</h2><div className="toolbar"><Form form={createForm} layout="inline" onFinish={({name}) => run(async () => {
         const created = await client.request<Tenant & Credential>('/tenants', 'POST', {name: name.trim()});

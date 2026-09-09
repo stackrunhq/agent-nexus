@@ -1,6 +1,6 @@
 # 企业调用凭据与模型授权（0.3）
 
-企业管理页面：`/admin/tenants`，仍使用平台管理员令牌。构建与使用见 [前端说明](../web/README.md)。
+企业管理页面：`/admin/tenants`，支持平台管理员个人会话或环境管理员令牌，个人身份详见 [IDENTITY.md](IDENTITY.md)。构建与使用见 [前端说明](../web/README.md)。
 
 这是模型 API 的企业接入基础，不是完整企业知识库隔离。当前存储支持 SQLite 和 PostgreSQL（17.11 已实测，见 DATABASE.md），尚无企业员工、角色、应用、文档或会话数据模型。
 

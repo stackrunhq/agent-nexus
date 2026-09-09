@@ -117,7 +117,7 @@ def admin_model_router(settings, admin_auth):
             gateway.store.put(
                 config,
                 expected_etag=if_match or "*",
-                actor="platform_admin",
+                actor=request.state.actor,
                 request_id=request.state.request_id,
             )
         except ConfigurationConflict:

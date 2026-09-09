@@ -18,7 +18,8 @@ def test_tenant_page_missing_build_and_scoped_policy(tmp_path, monkeypatch):
         assert "Enterprise" in page.text
         assert "script-src 'self';" in page.headers["content-security-policy"]
         assert "style-src 'self' 'unsafe-inline';" in page.headers["content-security-policy"]
-        assert "'unsafe-inline'" not in client.get("/admin/assets/missing").headers[
-            "content-security-policy"
-        ]
+        assert (
+            "'unsafe-inline'"
+            not in client.get("/admin/assets/missing").headers["content-security-policy"]
+        )
         assert client.get("/api/v1/admin/tenants").status_code == 401

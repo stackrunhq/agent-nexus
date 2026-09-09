@@ -8,11 +8,22 @@ from agent_nexus.core.errors import GatewayError
 def authentication(settings):
     bearer = HTTPBearer(auto_error=False)
 
-    def admin_auth(credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]):
-        if not credentials or not secrets.compare_digest(
-            credentials.credentials.encode(), settings.admin_token.encode()
-        ):
+    def admin_auth(
+        request: Request,
+        credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)],
+    ):
+        if not credentials:
             raise GatewayError(401, "unauthorized", "Valid administrator token required")
+        token = credentials.credentials
+        if secrets.compare_digest(token.encode(), settings.admin_token.encode()):
+            request.state.actor = "platform_admin"
+            return
+        user = request.app.state.identity.authenticate(token)
+        if user is None:
+            raise GatewayError(401, "unauthorized", "Valid administrator session required")
+        if user["role"] != "platform_admin":
+            raise GatewayError(403, "forbidden", "Platform administrator role required")
+        request.state.actor = user["id"]
 
     def client_auth(
         request: Request,
@@ -20,6 +31,16 @@ def authentication(settings):
     ):
         if not credentials:
             raise GatewayError(401, "unauthorized", "Valid client token required")
+        if credentials.credentials.startswith("ns_"):
+            user = request.app.state.identity.authenticate(credentials.credentials)
+            if user is None:
+                raise GatewayError(401, "unauthorized", "Valid personal session required")
+            if user["role"] != "tenant_user" or not user["tenant_id"]:
+                raise GatewayError(
+                    403, "forbidden", "Tenant member role required for model invocation"
+                )
+            request.state.tenant_id = user["tenant_id"]
+            return
         if settings.auth_mode == "tenant":
             tenant_id = request.app.state.tenants.authenticate(credentials.credentials)
             if tenant_id is None:
