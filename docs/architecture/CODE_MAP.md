@@ -83,6 +83,10 @@ agent-nexus/
 
 ### 混合检索与引用问答
 
+- `api/src/agent_nexus/knowledge/index_jobs.py`：索引入队、容量、租约领取和写入隔离。
+- `api/src/agent_nexus/storage/index_job_schema.py` / `0006_index_jobs.py`：持久任务表与迁移。
+- `cli/src/agent_nexus_cli/worker.py --queue indexes`：独立索引 Worker。
+
 - `api/src/agent_nexus/knowledge/answers.py`：RRF 融合、模型授权、单轮生成、引用校验和发布状态复查。
 - `api/src/agent_nexus/knowledge/vector_router.py`：向量、混合检索、引用问答的企业与管理员接口。
 - `web/src/app/features/knowledge/VectorPanel.tsx`：企业模型选择、索引状态和建立确认。

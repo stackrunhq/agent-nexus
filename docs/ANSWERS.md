@@ -11,7 +11,7 @@
 | `/hybrid-search` | `{"model":"embed-local","query":"如何重置密码","limit":5}` | `data` 原文来源列表、`method: hybrid_rrf` |
 | `/answers` | `{"model":"embed-local","chat_model":"chat-local","query":"如何重置密码","limit":5}` | `answer`、`citations`、`status` |
 
-`model` 必须拥有 embedding 能力，`chat_model` 必须拥有 chat 能力，且均已向当前企业授权。模型别名通过既有模型管理接口配置；索引操作见 [向量检索](VECTOR_SEARCH.md)。数据库版本保持 0005，无新迁移。
+`model` 必须拥有 embedding 能力，`chat_model` 必须拥有 chat 能力，且均已向当前企业授权。模型别名通过既有模型管理接口配置；索引操作见 [向量检索](VECTOR_SEARCH.md)。数据库版本为 0006，新增持久索引任务表。
 
 关键词和向量各取前 20 项，使用等权倒数排名融合（RRF，常数 60），按文档和分片去重，返回 1–20 项。无索引或索引失效返回 409，不自动降级为关键词结果。问题最多 200 字符，仍受 128 分片索引容量约束。分数仅用于排序，不是相关概率。
 
@@ -26,3 +26,5 @@
 下一步先用真实模型和企业手册建立检索/引用评测集，验证无答案问题、错误引用与文档内恶意指令；随后接入索引后台任务、配额和 pgvector，再推进帮助中心与嵌入式助手。
 
 代码入口：`api/src/agent_nexus/knowledge/answers.py` 实现融合和问答，`vector_router.py` 提供路由；`web/src/app/features/knowledge/VectorPanel.tsx` 管理模型与索引，`AnswerPanel.tsx` 展示引用问答。
+
+更新：页面建立索引已切换至持久化后台任务；原同步 vector-index API 保留兼容。任务接口、租约和容量限制见 [索引任务](INDEX_JOBS.md)。

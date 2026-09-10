@@ -3,6 +3,7 @@ from starlette.concurrency import run_in_threadpool
 from agent_nexus.core.errors import GatewayError
 from .vectors import IndexRequest, VectorSearchRequest, VectorService
 from .answers import AnswerRequest, AnswerService
+from .index_jobs import IndexJobs, validate_submission
 
 
 def vector_router(get_store, admin_auth, client_auth):
@@ -11,6 +12,27 @@ def vector_router(get_store, admin_auth, client_auth):
 
     def service(request):
         return VectorService(get_store().database, request.app.state.gateway)
+
+    @router.post(admin + "/index-jobs", dependencies=[Depends(admin_auth)], status_code=202)
+    async def enqueue_index(
+        tenant_id: str, app_id: str, version_id: str, body: IndexRequest, request: Request
+    ):
+        await run_in_threadpool(
+            validate_submission, service(request), tenant_id, app_id, version_id, body.model
+        )
+        return await run_in_threadpool(
+            IndexJobs(get_store().database).enqueue,
+            tenant_id,
+            app_id,
+            version_id,
+            body.model,
+            request.state.actor,
+            request.state.request_id,
+        )
+
+    @router.get(admin + "/index-jobs", dependencies=[Depends(admin_auth)])
+    def list_index_jobs(tenant_id: str, app_id: str, version_id: str):
+        return IndexJobs(get_store().database).list(tenant_id, app_id, version_id)
 
     @router.post(admin + "/hybrid-search", dependencies=[Depends(admin_auth)])
     async def hybrid_preview(

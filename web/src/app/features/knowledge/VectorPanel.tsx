@@ -6,6 +6,7 @@ import {AnswerPanel} from './AnswerPanel';
 
 interface Model {alias: string; enabled: boolean; capabilities: string[]; deployment: string}
 interface Index {status: 'ready' | 'stale'; dimensions: number; chunks: number}
+interface Job {id: string; model: string; status: string; attempts: number; error: string | null}
 export function VectorPanel({client, root}: {client: AdminClient; root: string}) {
   const [models, setModels] = useState<Model[]>([]);
   const [chatModels, setChatModels] = useState<Model[]>([]);
@@ -37,6 +38,7 @@ export function VectorPanel({client, root}: {client: AdminClient; root: string})
 }
 
 function ModelIndex({client, root, model, chatModels}: {client: AdminClient; root: string; model: Model; chatModels: Model[]}) {
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [index, setIndex] = useState<Index>();
   const [missing, setMissing] = useState(false);
   const [error, setError] = useState('');
@@ -45,6 +47,8 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
   const [revision, setRevision] = useState(0);
   const pending = useRef<AbortController | null>(null);
   async function refresh(signal: AbortSignal) {
+    const tasks = await client.request<{data: Job[]}>(`${root}/index-jobs`, 'GET', undefined, signal);
+    if (!signal.aborted) setJobs(tasks.data.filter(task => task.model === model.alias));
     try {
       const result = await client.request<Index>(`${root}/vector-index?model=${encodeURIComponent(model.alias)}`, 'GET', undefined, signal);
       if (!signal.aborted) setIndex(result);
@@ -59,7 +63,7 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
     const controller = new AbortController(); pending.current = controller;
     setBusy(true); setError(''); setIndex(undefined); setMissing(false); setRevision(value => value + 1);
     try {
-      if (build) await client.request(`${root}/vector-index`, 'POST', {model: model.alias}, controller.signal);
+      if (build) await client.request(`${root}/index-jobs`, 'POST', {model: model.alias}, controller.signal);
       if (!controller.signal.aborted) {setConfirm(false); await refresh(controller.signal);}
     } catch (e) {if (!controller.signal.aborted) setError((e as Error).message);}
     finally {if (!controller.signal.aborted) {pending.current = null; setBusy(false);}}
@@ -69,13 +73,15 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
     {error && <Alert type="error" message={error}/>}
     <p aria-live="polite">{busy ? '正在处理…' : missing ? '尚未建立索引' : index ? `${index.status === 'ready' ? '索引可用' : '索引已失效，请重建'} · ${index.chunks} 个分片 · ${index.dimensions} 维` : '索引状态未确认'}</p>
     <Button disabled={busy} onClick={() => void run()}>刷新索引状态</Button>
+    <p>任务状态按需刷新；请启动索引 Worker。相同版本/模型的活跃任务复用，每企业最多 5 个活跃任务。</p>
+    {jobs.map(task => <p key={task.id}>任务 {task.id}：{({queued:'排队中',processing:'构建中',succeeded:'构建成功',failed:'构建失败'} as Record<string,string>)[task.status] || task.status} · 第 {task.attempts} 次处理{task.error ? ` · ${task.error}` : ''}</p>)}
     <Button disabled={busy} onClick={() => setConfirm(true)}>建立或重建索引</Button>
     {index?.status === 'ready' && <SearchPanel key={revision} client={client} root={`${root}/vector-search`} enabled={!busy} model={model.alias}/>}
     {index?.status === 'ready' && <SearchPanel key={`hybrid:${revision}`} client={client} root={`${root}/hybrid-search`} enabled={!busy} model={model.alias} hybrid/>}
     {index?.status === 'ready' && <AnswerPanel key={`answer:${revision}`} client={client} root={root} model={model.alias} chatModels={chatModels}/>}
     <Modal open={confirm} title="确认建立或重建索引" okText="确认建立" cancelText="取消" confirmLoading={busy} cancelButtonProps={{disabled: busy}} closable={!busy} maskClosable={!busy} onCancel={() => setConfirm(false)} onOk={() => void run(true)}>
       <p>模型：{model.alias}（{model.deployment === 'local' ? '本地' : '云端'}）。将当前版本已发布手册的原文分片发送到该模型，云端调用可能产生费用。</p>
-      <p>当前最多支持 128 个分片。成功后替换该模型的旧索引；失败保留旧索引。关闭页面或切换模型不保证停止服务端构建。</p>
+      <p>提交后台任务，当前最多支持 128 个分片。Worker 成功后替换该模型的旧索引；失败保留旧索引。关闭页面或切换模型不停止任务。</p>
       {error && <Alert type="error" message={error}/>}
     </Modal>
   </div>;

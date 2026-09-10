@@ -37,5 +37,14 @@ services:
     cpus: 1.0
     pids_limit: 64
     restart: unless-stopped
+  index-worker:
+    extends:
+      service: worker
+    command: ["python", "-m", "agent_nexus_cli.worker", "--queue", "indexes"]
+    environment:
+      NEXUS_ALLOWED_HOSTS: ${NEXUS_ALLOWED_HOSTS:-localhost,127.0.0.1,host.docker.internal}
+      NEXUS_PROVIDER_CLOUD_KEY: ${NEXUS_PROVIDER_CLOUD_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 volumes:
   nexus-data:

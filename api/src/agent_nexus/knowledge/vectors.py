@@ -96,7 +96,7 @@ class VectorService:
             else "stale",
         }
 
-    async def build(self, tenant, app, version, model, actor, request_id):
+    async def build(self, tenant, app, version, model, actor, request_id, on_save=None):
         rows, config = await run_in_threadpool(self.snapshot, tenant, app, version, model)
         if not rows or len(rows) > MAX_INDEX_CHUNKS:
             raise GatewayError(409, "index_capacity", "Indexing requires 1..128 published chunks")
@@ -130,6 +130,8 @@ class VectorService:
 
         def save():
             with self.database.write("application:" + app) as db:
+                if on_save:
+                    on_save(db)
                 db.execute(
                     indexes.delete().where(
                         indexes.c.version_id == version, indexes.c.model == model

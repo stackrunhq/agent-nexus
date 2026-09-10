@@ -162,7 +162,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         assert archive.stat().st_size > 0
         restored = Database(urls[1])
         databases.append(restored)
-        assert restored.check()["revision"] == "0005"
+        assert restored.check()["revision"] == "0006"
         assert IdentityStore(restored).authenticate(member_token)["id"] == member["id"]
         with restored.read() as connection:
             for table in metadata.sorted_tables:
@@ -181,7 +181,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             connection.exec_driver_sql(f'GRANT CONNECT ON DATABASE "{names[1]}" TO {runtime_role}')
             connection.exec_driver_sql(f"GRANT USAGE ON SCHEMA public TO {runtime_role}")
             connection.exec_driver_sql(
-                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events, knowledge_documents, knowledge_chunks, knowledge_vector_indexes TO {runtime_role}"
+                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events, knowledge_documents, knowledge_chunks, knowledge_vector_indexes, knowledge_index_jobs TO {runtime_role}"
             )
             connection.exec_driver_sql(f"GRANT SELECT ON alembic_version TO {runtime_role}")
             connection.exec_driver_sql(

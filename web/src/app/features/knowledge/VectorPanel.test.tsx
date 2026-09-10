@@ -16,6 +16,7 @@ test('filters grants and capabilities, confirms builds and refreshes status', as
   const request = vi.spyOn(client, 'request').mockImplementation(async (path, method) => {
     if (path === '/models') return models as never;
     if (path === '/tenants/t/models') return {data:['local','cloud','chat']} as never;
+    if (path.endsWith('/index-jobs') && method !== 'POST') return {data:[]} as never;
     if (method === 'POST') {built = true; return {} as never;}
     if (!built) throw new ApiError('missing', 409, 'index_missing');
     return {status:'ready',dimensions:2,chunks:3} as never;
@@ -30,7 +31,7 @@ test('filters grants and capabilities, confirms builds and refreshes status', as
   expect(request.mock.calls.some(call => call[1] === 'POST')).toBe(false);
   fireEvent.click(screen.getByText('确认建立'));
   await screen.findByText('索引可用 · 3 个分片 · 2 维');
-  expect(request).toHaveBeenCalledWith(`${root}/vector-index`, 'POST', {model:'local'}, expect.any(AbortSignal));
+  expect(request).toHaveBeenCalledWith(`${root}/index-jobs`, 'POST', {model:'local'}, expect.any(AbortSignal));
 });
 test('switching model cancels pending status and hides stale results', async () => {
   const client = new AdminClient();

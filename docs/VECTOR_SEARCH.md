@@ -38,3 +38,5 @@
 管理页面已接入模型选择、索引建立/重建和状态查询，并支持向量、混合检索与引用问答，操作与接口见 [混合检索与引用问答](ANSWERS.md)。扩大规模前需接入后台任务、配额与 pgvector 等索引方案。
 
 代码位置：knowledge/vectors.py（快照、批次和检索）、vector_router.py（接口）、storage/vector_schema.py（表）、0005_vectors.py（冻结迁移）；models/gateway.py 的 embed_config 仅供内部固定配置调用。
+
+更新：页面建立索引已切换至持久化后台任务；原同步 vector-index API 保留兼容。任务接口、租约和容量限制见 [索引任务](INDEX_JOBS.md)。
