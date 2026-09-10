@@ -197,6 +197,13 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             )
             assert recovered.status_code == 200
             assert recovered.json()["data"][0]["text"] == "恢复后的产品手册"
+            searched = client.post(
+                f"/api/v1/applications/{application['id']}/versions/{version['id']}/search",
+                headers={"Authorization": "Bearer " + member_token},
+                json={"query": "产品手册"},
+            )
+            assert searched.status_code == 200
+            assert searched.json()["data"][0]["document_id"] == document["id"]
             published = client.get(
                 f"/api/v1/applications/{application['id']}/versions",
                 headers={"Authorization": "Bearer " + member_token},

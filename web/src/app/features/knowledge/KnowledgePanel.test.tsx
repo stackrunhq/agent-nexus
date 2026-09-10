@@ -40,15 +40,15 @@ test('renders source text safely and confirms publication before PATCH', async (
     return {data:[{...doc, published, warnings:['page_without_text:3']}]} as never;
   });
   const view = render(<KnowledgePanel client={client} root={root} title="ERP 1" versionStatus="published" enabled/>);
-  fireEvent.click(await screen.findByRole('button', {name:'查看分片'}));
+  fireEvent.click(await screen.findByText('查看分片'));
   await screen.findByText('<img src=x onerror=alert(1)>');
   expect(document.querySelector('.knowledge-text img')).toBeNull();
   expect(screen.getByText(/页码 2/)).toBeTruthy();
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', {name:'Close'}));
-  fireEvent.click(screen.getByRole('button', {name:'发布文档'}));
+  fireEvent.click(screen.getByText('发布文档'));
   expect(request.mock.calls.some(([, method]) => method === 'PATCH')).toBe(false);
   fireEvent.click(within(screen.getByRole('dialog', {name:'确认发布文档'})).getByRole('button', {name:/确.*认/}));
-  await screen.findByRole('button', {name:'撤回文档'});
+  await screen.findByText('撤回文档');
   expect(request).toHaveBeenCalledWith(root + '/d1', 'PATCH', {published:true}, expect.any(AbortSignal));
   view.unmount();
   expect(document.querySelector('.knowledge-text')).toBeNull();
@@ -61,10 +61,11 @@ test('failed documents can retry and server pagination uses offsets', async () =
     return {data:path.includes('offset=20') ? [] : Array.from({length:20}, (_, i) => ({...doc, id:'d'+i, filename:'manual'+i+'.txt', status:i===0?'failed':'ready', error:i===0?'parser_timeout':null}))} as never;
   });
   render(<KnowledgePanel client={client} root={root} title="ERP 1" versionStatus="draft" enabled/>);
-  fireEvent.click(await screen.findByRole('button', {name:'重试解析'}));
+  // Avoid full-table accessibility/style traversal for every retry assertion in jsdom.
+  fireEvent.click(await screen.findByText('重试解析'));
   await waitFor(() => expect(request).toHaveBeenCalledWith(root + '/d0/retry', 'POST', undefined, expect.any(AbortSignal)));
-  await waitFor(() => expect((screen.getByRole('button', {name:'下一页文档'}) as HTMLButtonElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('button', {name:'下一页文档'}));
+  await waitFor(() => expect(screen.getByText('下一页文档').closest('button')?.disabled).toBe(false));
+  fireEvent.click(screen.getByText('下一页文档'));
   await waitFor(() => expect(request).toHaveBeenCalledWith(root + '?offset=20&limit=20', 'GET', undefined, expect.any(AbortSignal)));
 });
 

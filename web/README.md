@@ -30,6 +30,8 @@ python -m pip install -e '.[dev]'
 
 凭据仅在内存中；关闭凭据弹窗立即卸载内容，断开连接取消请求并清除页面数据。状态变更与轮换有确认；轮换后旧凭据立即失效。已支持个人平台管理员登录和账号管理；企业成员只可调用所属企业授权模型，不能进入平台后台。详见 [个人身份](../docs/IDENTITY.md)。
 
-企业页因 Ant Design 动态样式允许内联 CSS，脚本仍限定同源；原模型页 CSP 保持严格。当前生产 JS 约 965 KB（gzip 约 306 KB），后续页面扩展时做拆分加载。
+企业页因 Ant Design 动态样式允许内联 CSS，脚本仍限定同源；原模型页 CSP 保持严格。当前生产 JS 约 967 KB（gzip 约 307 KB），后续页面扩展时做拆分加载。
 
 构建路径依据 [Vite build](https://vite.dev/guide/build)；组件用法参照 [Ant Design Modal](https://5x.ant.design/components/modal/)。
+
+知识库 SearchPanel.tsx 提供已发布版本的关键词检索、无命中提示及来源原文；不生成模型回答。页面关闭取消请求，发布状态变化清除结果。
