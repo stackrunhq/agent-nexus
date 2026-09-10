@@ -2,6 +2,7 @@
 
 import time
 import uuid
+import os
 from contextlib import suppress
 
 from sqlalchemy import select, func, or_, and_
@@ -24,7 +25,35 @@ class IndexJobs:
             key: row[key] for key in ("id", "model", "status", "attempts", "created_at", "error")
         }
 
-    def enqueue(self, tenant, app, version, model, actor, request_id):
+    def usage(self, tenant):
+        with self.database.read() as db:
+            return self._usage(db, tenant)
+
+    def _usage(self, db, tenant, now=None):
+        now = int(time.time()) if now is None else now
+        day_start = now - now % 86400
+        limit = int(os.getenv("NEXUS_INDEX_DAILY_LIMIT", "100"))
+        if not 1 <= limit <= 100000:
+            raise ValueError("NEXUS_INDEX_DAILY_LIMIT must be 1..100000")
+        used = db.execute(
+            select(func.count())
+            .select_from(jobs)
+            .where(jobs.c.tenant_id == tenant, jobs.c.created_at >= day_start)
+        ).scalar_one()
+        active = db.execute(
+            select(func.count())
+            .select_from(jobs)
+            .where(jobs.c.tenant_id == tenant, jobs.c.status.in_(["queued", "processing"]))
+        ).scalar_one()
+        return {
+            "daily_limit": limit,
+            "daily_used": used,
+            "reset_at": day_start + 86400,
+            "active": active,
+            "active_limit": 5,
+        }
+
+    def enqueue(self, tenant, app, version, model, actor, request_id, *, immediate=False):
         with self.database.write("index-queue") as db:
             active = jobs.c.status.in_(["queued", "processing"])
             existing = (
@@ -35,12 +64,17 @@ class IndexJobs:
                 .first()
             )
             if existing:
+                if immediate:
+                    raise GatewayError(409, "index_job_active", "An index task is already active")
                 return self.view(existing)
-            count = db.execute(
-                select(func.count()).select_from(jobs).where(jobs.c.tenant_id == tenant, active)
-            ).scalar_one()
-            if count >= 5:
+            now = int(time.time())
+            usage = self._usage(db, tenant, now)
+            if usage["active"] >= usage["active_limit"]:
                 raise GatewayError(429, "index_queue_full", "Tenant has five active index tasks")
+            if usage["daily_used"] >= usage["daily_limit"]:
+                raise GatewayError(
+                    429, "index_daily_quota_exceeded", "Tenant daily index quota exceeded"
+                )
             row = dict(
                 id=str(uuid.uuid4()),
                 tenant_id=tenant,
@@ -49,15 +83,19 @@ class IndexJobs:
                 model=model,
                 actor=actor,
                 request_id=request_id,
-                status="queued",
-                attempts=0,
-                lease_until=0,
-                claim_token="",
-                created_at=int(time.time()),
+                status="processing" if immediate else "queued",
+                attempts=1 if immediate else 0,
+                lease_until=now + 300 if immediate else 0,
+                claim_token=str(uuid.uuid4()) if immediate else "",
+                created_at=now,
                 error=None,
             )
             db.execute(jobs.insert().values(**row))
-            return self.view(row)
+            return row if immediate else self.view(row)
+
+    def fail(self, task, error):
+        with self.database.write("index-queue") as db:
+            self.finish(db, task, error)
 
     def list(self, tenant, app, version):
         with self.database.read() as db:

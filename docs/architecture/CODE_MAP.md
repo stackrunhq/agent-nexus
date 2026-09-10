@@ -91,3 +91,5 @@ agent-nexus/
 - `api/src/agent_nexus/knowledge/vector_router.py`：向量、混合检索、引用问答的企业与管理员接口。
 - `web/src/app/features/knowledge/VectorPanel.tsx`：企业模型选择、索引状态和建立确认。
 - `web/src/app/features/knowledge/AnswerPanel.tsx`：聊天模型选择、问题提交和原文引用展示。
+
+索引配额：knowledge/index_jobs.py 在任务登记事务内检查企业日用量与活跃数；vector_router.py 提供 index-usage 并将同步构建接入同一登记逻辑。

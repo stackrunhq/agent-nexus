@@ -16,6 +16,7 @@ test('filters grants and capabilities, confirms builds and refreshes status', as
   const request = vi.spyOn(client, 'request').mockImplementation(async (path, method) => {
     if (path === '/models') return models as never;
     if (path === '/tenants/t/models') return {data:['local','cloud','chat']} as never;
+    if (path.endsWith('/index-usage')) return {daily_limit:100,daily_used:0,active:0,active_limit:5,reset_at:86400} as never;
     if (path.endsWith('/index-jobs') && method !== 'POST') return {data:[]} as never;
     if (method === 'POST') {built = true; return {} as never;}
     if (!built) throw new ApiError('missing', 409, 'index_missing');

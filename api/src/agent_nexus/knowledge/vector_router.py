@@ -4,6 +4,7 @@ from agent_nexus.core.errors import GatewayError
 from .vectors import IndexRequest, VectorSearchRequest, VectorService
 from .answers import AnswerRequest, AnswerService
 from .index_jobs import IndexJobs, validate_submission
+from contextlib import suppress
 
 
 def vector_router(get_store, admin_auth, client_auth):
@@ -12,6 +13,10 @@ def vector_router(get_store, admin_auth, client_auth):
 
     def service(request):
         return VectorService(get_store().database, request.app.state.gateway)
+
+    @router.get("/api/v1/admin/tenants/{tenant_id}/index-usage", dependencies=[Depends(admin_auth)])
+    def index_usage(tenant_id: str):
+        return IndexJobs(get_store().database).usage(tenant_id)
 
     @router.post(admin + "/index-jobs", dependencies=[Depends(admin_auth)], status_code=202)
     async def enqueue_index(
@@ -86,9 +91,39 @@ def vector_router(get_store, admin_auth, client_auth):
     async def build(
         tenant_id: str, app_id: str, version_id: str, body: IndexRequest, request: Request
     ):
-        return await service(request).build(
-            tenant_id, app_id, version_id, body.model, request.state.actor, request.state.request_id
+        builder = service(request)
+        await run_in_threadpool(
+            validate_submission, builder, tenant_id, app_id, version_id, body.model
         )
+        store = IndexJobs(get_store().database)
+        task = await run_in_threadpool(
+            store.enqueue,
+            tenant_id,
+            app_id,
+            version_id,
+            body.model,
+            request.state.actor,
+            request.state.request_id,
+            immediate=True,
+        )
+        try:
+            return await builder.build(
+                tenant_id,
+                app_id,
+                version_id,
+                body.model,
+                request.state.actor,
+                request.state.request_id,
+                on_save=lambda db: store.finish(db, task),
+            )
+        except Exception as exc:
+            with suppress(GatewayError):
+                await run_in_threadpool(
+                    store.fail,
+                    task,
+                    exc.code if isinstance(exc, GatewayError) else "index_build_failed",
+                )
+            raise
 
     @router.post(admin + "/vector-search", dependencies=[Depends(admin_auth)])
     async def preview(

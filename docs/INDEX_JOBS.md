@@ -27,6 +27,6 @@ python -m agent_nexus_cli.worker --queue indexes
 
 领取租约 300 秒，异常中断到期可再次领取，最多 3 次后标记 `worker_interrupted`。租约令牌与有效期在索引保存事务内校验，成功状态和索引一起提交；旧 Worker 不可覆盖新 Worker 的结果。模型请求可能已计费，中断恢复不是上游恰好一次调用。索引维持 128 分片、4096 维、16 MiB、嵌入总计 120 秒限制。
 
-原同步 `POST /vector-index` 保留兼容，不受后台队列活跃数限制。因此本轮是队列容量保护，不是企业总用量/费用配额。下一步需统一构建入口并实现企业用量配额，随后接入 pgvector。当前没有进度百分比、取消任务、历史清理、优先级或租户公平调度；失效索引仍须明确重建。
+原同步 `POST /vector-index` 保留响应兼容，现已共用任务登记、活跃数限制和每日准入额度，见 [索引构建配额](INDEX_QUOTAS.md)。这不是企业 token/费用配额。当前没有进度百分比、取消任务、历史清理、优先级或租户公平调度；失效索引仍须明确重建。
 
 代码：`knowledge/index_jobs.py` 负责入队/领取/执行/租约；`storage/index_job_schema.py` 与冻结 0006 迁移定义表；`cli/…/worker.py --queue indexes` 运行独立消费循环。

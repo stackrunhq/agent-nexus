@@ -29,6 +29,12 @@ class Settings:
         )
 
     def validate(self):
+        try:
+            index_limit = int(os.getenv("NEXUS_INDEX_DAILY_LIMIT", "100"))
+            if not 1 <= index_limit <= 100000:
+                raise ValueError()
+        except ValueError:
+            raise RuntimeError("NEXUS_INDEX_DAILY_LIMIT must be an integer in 1..100000") from None
         if self.auth_mode not in {"bootstrap", "tenant"}:
             raise RuntimeError("NEXUS_AUTH_MODE must be bootstrap or tenant")
         if len(self.admin_token) < 32 or (
