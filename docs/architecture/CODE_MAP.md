@@ -78,3 +78,5 @@ agent-nexus/
 知识库前端：web/src/app/features/knowledge/KnowledgePanel.tsx 负责上传、状态、来源预览和发布确认，types.ts 管理协议类型；ApplicationsPanel.tsx 传入企业/应用/版本路径并按版本重新挂载，shared/client.ts 统一二进制上传及请求取消。
 
 关键词检索：api/src/agent_nexus/knowledge/search.py（可读分片查询、词项和 BM25 排序）、search_router.py（企业与管理员预览）；web/src/app/features/knowledge/SearchPanel.tsx（检索与来源原文）。当前无向量索引表，不在模型网关中混入检索逻辑。
+
+向量检索：api/src/agent_nexus/knowledge/vectors.py 保存配置指纹、文档摘要与归一化向量，vector_router.py 提供构建/状态/检索 API；storage/vector_schema.py 与 0005_vectors.py 为快照表。模型协议仍由 models/gateway.py 统一。

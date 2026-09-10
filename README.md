@@ -52,7 +52,7 @@ docker compose --project-directory . -f docker/compose.yaml up --build -d
 
 ## 个人登录与账号管理
 
-先备份并执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0004**。在 `/admin/tenants` 用环境管理员令牌创建第一个平台管理员，再切换“个人账号登录”。支持企业成员绑定、账号启停与重置密码；会话 1 小时到期。完整角色边界见 [个人身份](docs/IDENTITY.md)。
+先备份并执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0005**。在 `/admin/tenants` 用环境管理员令牌创建第一个平台管理员，再切换“个人账号登录”。支持企业成员绑定、账号启停与重置密码；会话 1 小时到期。完整角色边界见 [个人身份](docs/IDENTITY.md)。
 
 ## 原生启动
 
@@ -158,4 +158,6 @@ npm --prefix web test
 - 主机允许列表只配置可信端点，生产还需网络出口控制以约束 DNS 变化及内网访问。
 - 响应采用 Nexus 格式，不是完整的第三方 SDK 兼容代理。
 
-知识库检索：已发布版本的管理面板可按关键词查找手册，返回文件及页码/段落来源；企业 search API 遵守相同发布权限。当前为中文/英文关键词排序，没有 embedding 索引或大模型问答。见 [知识库说明](docs/KNOWLEDGE.md)。
+知识库页面支持中文/英文关键词排序，返回文件及页码/段落来源；企业 search API 遵守相同发布权限。向量索引另由下述 API 提供，大模型问答尚未实现。见 [知识库说明](docs/KNOWLEDGE.md)。
+
+0005 新增小规模持久化向量索引与向量检索 API，支持企业已授权的云端/本地 embedding 模型，详见 [向量检索](docs/VECTOR_SEARCH.md)。关键词页面仍独立，混合检索与大模型引用问答未实现。

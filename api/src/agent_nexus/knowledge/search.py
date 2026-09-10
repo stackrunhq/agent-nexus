@@ -43,8 +43,7 @@ class SearchRequest(StrictModel):
         return value.strip()
 
 
-def search(database, tenant_id, app_id, version_id, body):
-    """Scores are relative BM25-style rankings, not relevance probabilities."""
+def readable_chunks(database, tenant_id, app_id, version_id):
     versions = metadata.tables["application_versions"]
     apps = metadata.tables["applications"]
     tenants = metadata.tables["tenants"]
@@ -83,6 +82,12 @@ def search(database, tenant_id, app_id, version_id, body):
                     "This version exceeds the lexical search capacity",
                 )
             rows.append(dict(row))
+    return rows
+
+
+def search(database, tenant_id, app_id, version_id, body):
+    """Scores are relative BM25-style rankings, not relevance probabilities."""
+    rows = readable_chunks(database, tenant_id, app_id, version_id)
     terms = set(tokenize(body.query))
     counts, lengths = [], []
     frequency = Counter()

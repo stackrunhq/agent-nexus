@@ -4,7 +4,7 @@
 
 ## 启动与升级
 
-已有数据库先停止 API 和 Worker，备份后执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0004**；新增 knowledge_documents、knowledge_chunks 两张表。API 和 Worker 使用相同的 NEXUS_DATABASE_URL 或 NEXUS_DATABASE_PATH。
+已有数据库先停止 API 和 Worker，备份后执行 `python -m agent_nexus.db_cli upgrade` 升级到 **0005**；0004 新增文档与分片两表，0005 新增向量快照表；详见 [向量检索](VECTOR_SEARCH.md)。API 和 Worker 使用相同的 NEXUS_DATABASE_URL 或 NEXUS_DATABASE_PATH。
 
 ```sh
 # 独立终端/服务启动 Worker；API 仍使用原 uvicorn 启动命令
@@ -67,7 +67,7 @@ curl -X POST "$DOCUMENTS_URL?filename=manual.pdf" \
 - 请求：`{"query":"重置密码","limit":5}`。query 最多 200 字符，limit 为 1–20 的整数，默认 5；不接受额外 tenant_id 等字段。
 - 返回：`data` 中包含 document_id、filename、sha256、version_id、chunk_index、text、source_kind/source_index、start/end、score 和 matched_terms；另有 method=lexical_bm25 与 scanned_chunks。分数是当前版本内的相对排序值，不是可信度或概率。
 
-当前是实时关键词基线：NFKC 与大小写规范化、常用汉字单字/双字及英文数字词匹配，按 BM25 方式评分，不要求所有词同时命中。不支持语义同义词、复杂分词、拼写纠正或跨版本搜索。没有持久化向量索引，也不调用 embedding 或聊天模型。
+当前关键词接口使用 NFKC 与大小写规范化、常用汉字单字/双字及英文数字词匹配，按 BM25 方式评分，不要求所有词同时命中。不支持语义同义词、复杂分词、拼写纠正或跨版本搜索，也不调用模型。另已提供独立的 [持久化向量检索 API](VECTOR_SEARCH.md)，两种检索尚未融合。
 
 查询内容时 SQL 同时过滤企业、应用、产品版本与文档发布状态，读不到其他企业、未发布、撤回或退役内容；无缓存，不会留下旧向量。单次查询范围最多 5000 个可读分片或 400 万字符，超过返回 409/search_scope_too_large，不默默截断或假装完整检索。此范围是容量上限，不是性能承诺；大规模检索需后续专用索引与配额。
 
@@ -105,6 +105,6 @@ nexus-document ./manual.md --chunk-size 1000 --overlap 150
 - 输入最多 10 MiB，PDF 最多 500 页，提取文本最多 200 万字符、分片最多 10000 个；DOCX 压缩包最多 2000 项、声明解压体积 50 MiB，正文 XML 最多 10 MiB；禁止 XML 实体，不解压包内文件到磁盘。入库固定使用默认分片参数，离线 CLI 可调整。
 - 加密 PDF 拒绝处理；全部无文本的文档报 no_extractable_text，混合 PDF 通过 warnings 标明无文本页。暂不支持 OCR、图片、旧 DOC、页眉页脚、复杂版式和表格结构还原。
 - 入库解析在独立子进程执行，不继承 Nexus 数据库/模型凭据，输入输出放在自动清理的临时目录。POSIX 子进程配置 512 MiB 地址空间、45 秒 CPU 和 32 MiB 输出文件上限；Docker Worker 另限 768 MiB 内存、1 CPU、64 进程。Windows 原生只有子进程超时和输入/输出量限制，没有地址空间硬限制；离线预览 CLI 不具备进程隔离。PDF 解码资源风险见 [pypdf 文本提取说明](https://pypdf.readthedocs.io/en/stable/user/extract-text.html)。进程隔离不是完整安全沙箱，上线前仍需验证平台限制、入口并发/速率/请求超时与文档访问策略。
-- 下一步：持久化向量索引、关键词/向量混合检索和带引用问答；当前仅关键词检索已完成。OCR、S3、Celery、队列监控与企业存储配额尚未实现。
+- 下一步：向量管理页面、关键词/向量混合检索和带引用问答；有界向量快照 API 已完成。OCR、S3、Celery、队列监控与企业存储配额尚未实现。
 
 代码入口：api/src/agent_nexus/knowledge/ 下 router.py（HTTP）、store.py（数据与任务状态）、jobs.py（子进程调度）、process.py（解析子进程）、parsing.py（格式解析）、chunking.py（来源分片）；cli/src/agent_nexus_cli/worker.py（Worker 命令）、document.py（预览），api/tests/knowledge/（回归）。

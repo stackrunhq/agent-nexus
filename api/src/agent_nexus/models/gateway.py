@@ -147,6 +147,10 @@ class Gateway:
 
     async def embed(self, request: EmbeddingRequest, request_id: str):
         config = await run_in_threadpool(self.resolve, request.model, "embeddings")
+        return await self.embed_config(config, request, request_id)
+
+    async def embed_config(self, config, request: EmbeddingRequest, request_id: str):
+        """Internal immutable configuration snapshot for multi-batch indexing."""
         body = {"model": config.model, "input": request.input}
         if config.provider == "ollama":
             body["truncate"] = False

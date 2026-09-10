@@ -22,6 +22,7 @@ from agent_nexus.applications.router import application_router
 from agent_nexus.knowledge.store import KnowledgeStore
 from agent_nexus.knowledge.router import knowledge_router
 from agent_nexus.knowledge.search_router import search_router
+from agent_nexus.knowledge.vector_router import vector_router
 
 
 def create_app(settings: Settings | None = None, transport=None):
@@ -51,6 +52,7 @@ def create_app(settings: Settings | None = None, transport=None):
     app.include_router(health_router())
     app.include_router(knowledge_router(lambda: app.state.knowledge, admin_auth, client_auth))
     app.include_router(search_router(lambda: app.state.knowledge, admin_auth, client_auth))
+    app.include_router(vector_router(lambda: app.state.knowledge, admin_auth, client_auth))
     app.include_router(application_router(lambda: app.state.applications, admin_auth, client_auth))
     app.include_router(identity_router(lambda: app.state.identity, admin_auth))
     app.include_router(tenant_router(lambda: app.state.tenants, admin_auth))

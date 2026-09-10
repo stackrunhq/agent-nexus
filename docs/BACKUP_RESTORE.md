@@ -1,5 +1,9 @@
 # PostgreSQL 实库与备份恢复演练
 
+## 0005 向量快照（2026-09-10）
+
+PostgreSQL 17.11 全量 **103 passed、0 skipped**，恢复摘要覆盖 14 张业务表；新增向量快照及模型授权后，恢复环境中个人企业成员使用受限数据库账号完成向量检索。embedding 服务采用 HTTP 模拟，未验证真实模型质量。临时服务器已停止，生成凭据已删除。下列早期版本为历史结果。
+
 ## 0004 知识库升级（2026-09-09）
 
 本轮 PostgreSQL 17.11 全量 **95 passed、0 skipped**，包含 13 张业务表的摘要恢复校验。新增原文件 bytea 与来源分片恢复、已发布文档的个人企业身份读取；受限运行角色授权包含 knowledge_documents、knowledge_chunks。临时服务器已停止、生成凭据文件已删除。以下 0001–0003 结果为历史记录。
@@ -77,7 +81,7 @@ pg_restore --exit-on-error --single-transaction --no-owner --no-acl --dbname=新
 GRANT CONNECT ON DATABASE nexus TO nexus_app;
 GRANT USAGE ON SCHEMA public TO nexus_app;
 GRANT SELECT, INSERT, UPDATE, DELETE
-ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events, knowledge_documents, knowledge_chunks TO nexus_app;
+ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events, knowledge_documents, knowledge_chunks, knowledge_vector_indexes TO nexus_app;
 GRANT SELECT ON alembic_version TO nexus_app;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO nexus_app;
 ```

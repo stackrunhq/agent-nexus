@@ -8,7 +8,7 @@
 | 嵌入式助手 | TypeScript SDK + iframe | 未来 sdk/ | 待开发 |
 | 后端 API | FastAPI + Pydantic | api/ | 模型、企业接入基础已实现 |
 | 数据访问 | SQLAlchemy + Alembic | API storage/ | 已实现 |
-| 数据库 | PostgreSQL + pgvector | api/、docker/ | PostgreSQL 已验证，向量检索待开发 |
+| 数据库 | PostgreSQL + pgvector | api/、docker/ | PostgreSQL 已验证，JSON 向量快照与精确余弦检索已实现；pgvector 待接入 |
 | 缓存与后台任务 | Redis + Celery | CLI worker、API knowledge、docker/ | 已实现数据库队列与独立解析进程；Redis/Celery 待开发 |
 | 文件存储 | S3 兼容存储 | API knowledge/ | 原文件暂存数据库 BLOB/bytea，S3 待开发，私有文件不放 image/ |
 | 模型接入 | 自有网关，可选 LiteLLM | API models/ | 兼容协议与 Ollama 已实现，未引入 LiteLLM |
@@ -17,4 +17,4 @@
 | 监控 | 结构化日志 + OpenTelemetry | API 公共设施 | 当前请求 ID 和错误日志，完整追踪待开发 |
 | 运维 | Python CLI | cli/ | 升级、导入、检查、文档预览和 Worker |
 
-React 企业管理及现有企业接口对接已完成；个人登录、会话和两角色已实现；应用版本基础及知识库离线解析与来源分片已完成；0004 已实现文档上传、数据库原文件/分片、隔离解析 Worker 与发布读取，知识库管理页面已完成，关键词检索已完成，下一项推进持久化向量索引与混合检索，更细权限继续按需扩展，并逐步迁移模型页面。知识库、任务及流程按依赖顺序推进。
+React 企业管理及现有企业接口对接已完成；个人登录、会话和两角色已实现；应用版本基础及知识库离线解析与来源分片已完成；0004 已实现文档上传、数据库原文件/分片、隔离解析 Worker 与发布读取，知识库管理页面已完成，关键词检索已完成，0005 已实现小规模持久化向量 API，下一项推进向量管理页面与混合检索，更细权限继续按需扩展，并逐步迁移模型页面。知识库、任务及流程按依赖顺序推进。

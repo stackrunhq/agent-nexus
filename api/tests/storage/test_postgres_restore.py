@@ -1,6 +1,7 @@
 """Real pg_dump/pg_restore rehearsal in two newly created disposable databases."""
 
 import os
+import asyncio
 import shutil
 import secrets
 import subprocess
@@ -26,6 +27,8 @@ from agent_nexus.applications.store import ApplicationStore
 from agent_nexus.applications.schemas import ApplicationCreate, VersionCreate
 from agent_nexus.knowledge.store import KnowledgeStore
 from agent_nexus.knowledge.jobs import run_once
+from agent_nexus.knowledge.vectors import VectorService
+from agent_nexus.models.gateway import Gateway
 
 
 def pg_tool(name):
@@ -99,6 +102,18 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         KnowledgeStore(source).publish(
             tenant["id"], application["id"], version["id"], document["id"], True, "platform_admin", "restore",
         )
+        embedding = model.model_copy(update={"alias": "restore-vectors", "capabilities": ["embeddings"]})
+        ModelStore(source).put(embedding)
+        TenantStore(source).grant(tenant["id"], embedding.alias, True)
+
+        async def index_document():
+            async with httpx.AsyncClient(transport=httpx.MockTransport(
+                lambda request: httpx.Response(200, json={"embeddings": [[1.0, 0.0]]})
+            )) as provider:
+                await VectorService(source, Gateway(ModelStore(source), provider, {"provider.test"})).build(
+                    tenant["id"], application["id"], version["id"], embedding.alias, "platform_admin", "restore"
+                )
+        asyncio.run(index_document())
         with source.read() as connection:
             for table in metadata.sorted_tables:
                 source_hashes[table.name] = digest(connection, table)
@@ -147,13 +162,13 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         assert archive.stat().st_size > 0
         restored = Database(urls[1])
         databases.append(restored)
-        assert restored.check()["revision"] == "0004"
+        assert restored.check()["revision"] == "0005"
         assert IdentityStore(restored).authenticate(member_token)["id"] == member["id"]
         with restored.read() as connection:
             for table in metadata.sorted_tables:
                 assert digest(connection, table) == source_hashes[table.name]
         assert TenantStore(restored).authenticate(tenant["api_key"]) == tenant["id"]
-        assert TenantStore(restored).allowed(tenant["id"]) == {model.alias}
+        assert TenantStore(restored).allowed(tenant["id"]) == {model.alias, embedding.alias}
 
         # Rehearse a runtime account without migration or DDL privileges.
         runtime_role = "nexus_app_" + uuid4().hex
@@ -166,7 +181,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             connection.exec_driver_sql(f'GRANT CONNECT ON DATABASE "{names[1]}" TO {runtime_role}')
             connection.exec_driver_sql(f"GRANT USAGE ON SCHEMA public TO {runtime_role}")
             connection.exec_driver_sql(
-                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events, knowledge_documents, knowledge_chunks TO {runtime_role}"
+                f"GRANT SELECT, INSERT, UPDATE, DELETE ON models, model_audit, tenants, tenant_models, tenant_events, users, user_sessions, user_events, applications, application_versions, application_events, knowledge_documents, knowledge_chunks, knowledge_vector_indexes TO {runtime_role}"
             )
             connection.exec_driver_sql(f"GRANT SELECT ON alembic_version TO {runtime_role}")
             connection.exec_driver_sql(
@@ -186,6 +201,8 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         settings = Settings("a" * 32, "", "unused", {"provider.test"}, "tenant", runtime_url)
 
         def upstream(request):
+            if request.url.path.endswith("/api/embed"):
+                return httpx.Response(200, json={"embeddings": [[1.0, 0.0]]})
             return httpx.Response(200, json={"done": True, "message": {"content": "restored"}})
 
         with TestClient(create_app(settings, httpx.MockTransport(upstream))) as client:
@@ -204,6 +221,13 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
             )
             assert searched.status_code == 200
             assert searched.json()["data"][0]["document_id"] == document["id"]
+            semantic = client.post(
+                f"/api/v1/applications/{application['id']}/versions/{version['id']}/vector-search",
+                headers={"Authorization": "Bearer " + member_token},
+                json={"query": "产品手册", "model": embedding.alias},
+            )
+            assert semantic.status_code == 200
+            assert semantic.json()["data"][0]["document_id"] == document["id"]
             published = client.get(
                 f"/api/v1/applications/{application['id']}/versions",
                 headers={"Authorization": "Bearer " + member_token},
