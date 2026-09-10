@@ -3,6 +3,37 @@ import { AdminClient } from './client';
 
 afterEach(() => {vi.unstubAllGlobals(); vi.useRealTimers();});
 
+test('upload sends original bytes and encoded filename with the current credential', async () => {
+  const fetcher = vi.fn().mockResolvedValue(Response.json({id: 'd1', status: 'queued'}));
+  vi.stubGlobal('fetch', fetcher);
+  const client = new AdminClient(); client.connect('upload-token');
+  const file = new File(['manual'], '手册 #1.txt');
+  await client.upload('/tenants/t1/applications/a1/versions/v1/documents', file);
+  expect(fetcher.mock.calls[0][0]).toBe('/api/v1/admin/tenants/t1/applications/a1/versions/v1/documents?filename=' + encodeURIComponent(file.name));
+  expect(fetcher.mock.calls[0][1].body).toBe(file);
+  expect(fetcher.mock.calls[0][1].headers).toEqual({'Content-Type': 'application/octet-stream', Authorization: 'Bearer upload-token'});
+});
+
+test('scope cancellation rejects late upload responses without disconnecting the client', async () => {
+  let resolve!: (response: Response) => void;
+  const fetcher = vi.fn((_url: RequestInfo | URL, _init?: RequestInit) => new Promise<Response>(r => {resolve = r;}));
+  vi.stubGlobal('fetch', fetcher);
+  const client = new AdminClient(); client.connect('upload-token');
+  const controller = new AbortController();
+  const result = client.upload('/documents', new File(['manual'], 'manual.txt'), controller.signal);
+  controller.abort();
+  expect(fetcher.mock.calls[0][1]?.signal?.aborted).toBe(true);
+  resolve(Response.json({id: 'old'}));
+  await expect(result).rejects.toMatchObject({name: 'AbortError'});
+});
+
+test('non-JSON expired upload responses still clear personal sessions', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('Unauthorized', {status: 401})));
+  const client = new AdminClient(); client.connect('ns_expired'); client.onExpired = vi.fn();
+  await expect(client.upload('/documents', new File(['manual'], 'manual.txt'))).rejects.toThrow('401');
+  expect(client.onExpired).toHaveBeenCalledOnce();
+});
+
 test('personal session deadline clears access and notifies the page', async () => {
   vi.useFakeTimers();
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({access_token:'ns_short',expires_in:1,user:{role:'platform_admin'}})));

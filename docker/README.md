@@ -18,3 +18,5 @@ docker build -f docker/Dockerfile -t agent-nexus:local .
 Dockerfile 先用 Node 22 执行 npm ci 和前端构建，再将 API、CLI、原页面及 React 构建资源放入 Python 镜像。.dockerignore 留在根目录，因为根目录是构建上下文。不要在 docker/ 内直接套用这些命令。升级与备份见 [数据库说明](../docs/DATABASE.md)。
 
 Compose 新增独立 worker 服务，使用同一数据库处理知识库队列，原文件随数据库一起备份。没有 Worker 时上传仍会返回 queued；API 就绪检查不检查队列消费。运行机制、原生启动和接口步骤见 [知识库说明](../docs/KNOWLEDGE.md)。本阶段未采用 S3/Redis/Celery。
+
+知识库页面入口：/admin/tenants → 管理版本 → 管理知识库。更新页面需重新构建镜像；本轮没有新迁移，保持数据库 0004。Worker 必须独立运行才能消费上传任务。

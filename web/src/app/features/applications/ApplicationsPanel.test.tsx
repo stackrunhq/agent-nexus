@@ -16,6 +16,7 @@ test('application version publication is scoped and requires confirmation',async
   const client=new AdminClient();
   let published=false;
   const request=vi.spyOn(client,'request').mockImplementation(async(path,method)=>{
+    if(path.includes('/documents'))return {data:[]} as never;
     if(method==='PATCH'){published=true;return {} as never;}
     if(path.endsWith('/events'))return {data:[]} as never;
     if(path.endsWith('/versions'))return {data:[{id:'v1',version:'1.0',notes:'',status:published?'published':'draft'}]} as never;
@@ -25,6 +26,8 @@ test('application version publication is scoped and requires confirmation',async
   fireEvent.mouseDown(screen.getByRole('combobox',{name:'应用所属企业'}));
   fireEvent.click(screen.getByText('Tenant A'));
   fireEvent.click(await screen.findByText('管理版本'));
+  fireEvent.click(await screen.findByText('管理知识库'));
+  await waitFor(()=>expect(request).toHaveBeenCalledWith('/tenants/t1/applications/a1/versions/v1/documents?offset=0&limit=20','GET',undefined,expect.any(AbortSignal)));
   fireEvent.click(await screen.findByText('发布版本'));
   expect(request.mock.calls.some(([,method])=>method==='PATCH')).toBe(false);
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button',{name:/OK|确.*定/}));

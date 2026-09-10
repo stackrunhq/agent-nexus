@@ -74,3 +74,5 @@ agent-nexus/
 虚拟环境、.tools、build、dist、缓存与 *.egg-info 是本地生成物，data 是运行数据，均不提交。旧 src 可能只剩忽略的 egg-info，不是业务代码，不手工修改。构建前清理已核对的仓库 build 生成目录，避免旧模块进入安装包。
 
 知识库调用链：knowledge/router.py → store.py（归属校验、文档/分片和队列）→ storage/knowledge_schema.py。独立 cli/src/agent_nexus_cli/worker.py → knowledge/jobs.py（领取与超时）→ process.py（子进程资源限制）→ parsing.py/chunking.py。0004_knowledge.py 冻结迁移；api/tests/knowledge/ 对应测试。
+
+知识库前端：web/src/app/features/knowledge/KnowledgePanel.tsx 负责上传、状态、来源预览和发布确认，types.ts 管理协议类型；ApplicationsPanel.tsx 传入企业/应用/版本路径并按版本重新挂载，shared/client.ts 统一二进制上传及请求取消。

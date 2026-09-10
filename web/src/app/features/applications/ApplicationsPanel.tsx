@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Alert, Button, Form, Input, Modal, Select, Space, Table } from 'antd';
 import { AdminClient } from '../../shared/client';
 import type { Tenant } from '../tenants/types';
+import { KnowledgePanel } from '../knowledge/KnowledgePanel';
 
 interface Application { id: string; tenant_id: string; slug: string; name: string; description: string; enabled: boolean }
 interface Version { id: string; version: string; notes: string; status: 'draft' | 'published' | 'retired' }
@@ -14,6 +15,7 @@ export function ApplicationsPanel({client, tenants}: {client: AdminClient; tenan
   const [selected, setSelected] = useState<Application>();
   const [versions, setVersions] = useState<Version[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [documentVersion, setDocumentVersion] = useState<Version>();
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const [error, setError] = useState('');
@@ -31,14 +33,14 @@ export function ApplicationsPanel({client, tenants}: {client: AdminClient; tenan
     setApps((await client.request<{data: Application[]}>(root(id))).data);
   }
   async function details(app: Application) {
-    setSelected(app); setVersions([]); setEvents([]); if(selected) versionForm.resetFields();
+    setSelected(app); setDocumentVersion(undefined); setVersions([]); setEvents([]); if(selected) versionForm.resetFields();
     const [releases, history] = await Promise.all([
       client.request<{data: Version[]}>(`${root(app.tenant_id)}/${app.id}/versions`),
       client.request<{data: Event[]}>(`${root(app.tenant_id)}/${app.id}/events`),
     ]);
     setVersions(releases.data); setEvents(history.data);
   }
-  return <section><h2>应用与版本</h2><p>将使用手册归属到具体企业应用和产品版本。当前管理版本元信息，文件解析与分片尚未接入。</p>
+  return <section><h2>应用与版本</h2><p>将使用手册归属到具体企业应用和产品版本。选择“管理知识库”上传手册、查看分片并发布文档。</p>
     {error && <Alert type="error" message={error}/>}
     <div className="toolbar"><Select aria-label="应用所属企业" placeholder="选择企业" style={{minWidth:240}} value={tenant} disabled={busy} options={tenants.map(t=>({value:t.id,label:t.name}))} onChange={id=>run(async()=>{
       setTenant(id); setSelected(undefined); setApps([]); setVersions([]); setEvents([]); if(tenant) appForm.resetFields(); if(selected) versionForm.resetFields(); await list(id);
@@ -62,10 +64,11 @@ export function ApplicationsPanel({client, tenants}: {client: AdminClient; tenan
       <Button htmlType="submit" disabled={busy}>创建版本草稿</Button>
     </Form><Table rowKey="id" dataSource={versions} pagination={{pageSize:10}} columns={[
       {title:'版本',dataIndex:'version'},{title:'状态',dataIndex:'status',render:(status:Version['status'])=>labels[status]}, {title:'说明',dataIndex:'notes'},
-      {title:'操作',render:(_,version)=>version.status==='retired'?'—':<Button disabled={busy} onClick={()=>setChange({app:selected,version})}>{version.status==='draft'?'发布版本':'退役版本'}</Button>},
+      {title:'操作',render:(_,version)=><Space><Button disabled={busy} onClick={()=>setDocumentVersion(version)}>管理知识库</Button>{version.status!=='retired' && <Button disabled={busy} onClick={()=>setChange({app:selected,version})}>{version.status==='draft'?'发布版本':'退役版本'}</Button>}</Space>},
     ]}/><details><summary>最近 100 条应用操作记录</summary><Table rowKey="id" dataSource={events} pagination={{pageSize:10}} columns={[
       {title:'事件',dataIndex:'action'},{title:'操作人',dataIndex:'actor'},{title:'请求 ID',dataIndex:'request_id'},{title:'时间',dataIndex:'created_at',render:t=>new Date(t*1000).toLocaleString()},
     ]}/></details></>}
+    {selected && documentVersion && <KnowledgePanel key={`${selected.id}:${documentVersion.id}`} client={client} root={`${root(selected.tenant_id)}/${selected.id}/versions/${documentVersion.id}/documents`} title={`${selected.name} ${documentVersion.version}`} versionStatus={documentVersion.status} enabled={selected.enabled && !!tenants.find(t=>t.id===selected.tenant_id)?.enabled}/>}
     {change && <Modal open title="确认应用版本变更" confirmLoading={busy} onCancel={()=>setChange(undefined)} onOk={()=>run(async()=>{
       const base = `${root(change.app.tenant_id)}/${change.app.id}`;
       let updated = change.app;

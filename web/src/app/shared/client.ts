@@ -34,23 +34,33 @@ export class AdminClient {
     });
     if (!response.ok && response.status !== 401) throw new Error('本地已断开，服务端退出未确认；会话将在到期后失效。');
   }
-  async request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+  async request<T>(path: string, method = 'GET', body?: unknown, signal?: AbortSignal): Promise<T> {
+    return this.send<T>(path, method, body === undefined ? undefined : JSON.stringify(body), 'application/json', signal);
+  }
+  async upload<T>(path: string, file: File, signal?: AbortSignal): Promise<T> {
+    return this.send<T>(`${path}?filename=${encodeURIComponent(file.name)}`, 'POST', file, 'application/octet-stream', signal);
+  }
+  private async send<T>(path: string, method: string, body: BodyInit | undefined, contentType: string, signal?: AbortSignal): Promise<T> {
     const generation = this.generation;
     const controller = new AbortController();
+    const abort = () => controller.abort();
+    signal?.addEventListener('abort', abort, {once: true});
+    if (signal?.aborted) controller.abort();
     this.pending.add(controller);
     try {
       const response = await fetch(`/api/v1${path.startsWith('/auth/') ? '' : '/admin'}${path}`, {
         method, signal: controller.signal,
-        headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json' },
-        body: body === undefined ? undefined : JSON.stringify(body),
+        headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': contentType },
+        body,
       });
-      const data = response.status === 204 ? undefined : await response.json();
-      if (generation !== this.generation) throw new DOMException('连接已结束', 'AbortError');
+      const data = response.status === 204 ? undefined : await response.json().catch(() => undefined);
+      if (generation !== this.generation || controller.signal.aborted) throw new DOMException('连接已结束', 'AbortError');
       if (response.status === 401 && this.token.startsWith('ns_')) {
         this.disconnect(); this.onExpired?.();
       }
       if (!response.ok) throw new Error(`${data?.error?.message || '请求失败'}（${response.status}），请求 ID：${data?.request_id || '—'}`);
+      if (response.status !== 204 && data === undefined) throw new Error('服务返回了无法识别的响应，请稍后刷新。');
       return data as T;
-    } finally { this.pending.delete(controller); }
+    } finally { this.pending.delete(controller); signal?.removeEventListener('abort', abort); }
   }
 }

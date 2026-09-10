@@ -1,6 +1,6 @@
 # 知识库上传、处理与来源分片
 
-当前完成管理员上传、原文件及分片持久化、独立 Worker、处理状态、失败重试、文档发布/撤回和企业读取隔离。原文件先存数据库 BLOB/bytea，保证原文件和任务一起提交；尚未采用 S3 或 Celery，也没有上传管理页面。离线 CLI 预览仍可用，不入库、不调用大模型。
+当前完成管理员上传、原文件及分片持久化、独立 Worker、处理状态、失败重试、文档发布/撤回和企业读取隔离。原文件先存数据库 BLOB/bytea，保证原文件和任务一起提交；尚未采用 S3 或 Celery；React 管理页面已接入这些接口。离线 CLI 预览仍可用，不入库、不调用大模型。
 
 ## 启动与升级
 
@@ -14,6 +14,19 @@ python -m agent_nexus_cli.worker --once
 ```
 
 重新安装项目后也可使用 `nexus-worker`。Docker Compose 已包含 worker 服务，SQLite 共用命名卷，PostgreSQL 等待 migrate 成功。未启动 Worker 时任务保持 queued；API 健康检查不代表 Worker 存活。
+
+## 页面操作
+
+入口 `/admin/tenants` → 应用与版本 → 选择企业 → 管理版本 → 对应版本的“管理知识库”。
+
+1. 草稿版本中选择非空 PDF/DOCX/MD/TXT 文件，点击“上传手册”。页面先检查 10 MiB 上限、格式和文件名；服务器仍是最终校验方。
+2. 点击“刷新处理状态”查看等待、解析、完成或失败；当前按需刷新，不自动轮询。失败时显示原因，可点击“重试解析”。等待处理时需确认 Worker 已启动。
+3. 点击“查看分片”查看原文、页码/段落和字符范围。原文以纯文本呈现，不执行 HTML 或渲染 Markdown。解析提示可展开查看。
+4. 先发布产品版本，再进入其知识库，确认“发布文档”；撤回也需确认。停用企业/应用和退役版本禁止上传、重试及新发布，已发布文档仍可撤回。
+
+文档和分片每页 20 条，使用服务端 offset 分页；满页时可能还存在一个空的末页，可返回上一页。切换企业/应用/版本、刷新应用详情或断开连接会卸载知识库面板，取消其请求并清除选中文件与分片。取消浏览器请求不等于取消已入库任务，重新进入可刷新查询，重复上传由后端去重。
+
+源码：`web/src/app/features/knowledge/KnowledgePanel.tsx`（页面与确认）、`types.ts`（文档/分片类型与错误文案），通过 ApplicationsPanel 接入版本归属。二进制上传复用 shared/client.ts 的身份、取消和过期会话处理，不把文件或凭据存到浏览器持久存储。
 
 ## API 操作顺序
 
@@ -77,6 +90,6 @@ nexus-document ./manual.md --chunk-size 1000 --overlap 150
 - 输入最多 10 MiB，PDF 最多 500 页，提取文本最多 200 万字符、分片最多 10000 个；DOCX 压缩包最多 2000 项、声明解压体积 50 MiB，正文 XML 最多 10 MiB；禁止 XML 实体，不解压包内文件到磁盘。入库固定使用默认分片参数，离线 CLI 可调整。
 - 加密 PDF 拒绝处理；全部无文本的文档报 no_extractable_text，混合 PDF 通过 warnings 标明无文本页。暂不支持 OCR、图片、旧 DOC、页眉页脚、复杂版式和表格结构还原。
 - 入库解析在独立子进程执行，不继承 Nexus 数据库/模型凭据，输入输出放在自动清理的临时目录。POSIX 子进程配置 512 MiB 地址空间、45 秒 CPU 和 32 MiB 输出文件上限；Docker Worker 另限 768 MiB 内存、1 CPU、64 进程。Windows 原生只有子进程超时和输入/输出量限制，没有地址空间硬限制；离线预览 CLI 不具备进程隔离。PDF 解码资源风险见 [pypdf 文本提取说明](https://pypdf.readthedocs.io/en/stable/user/extract-text.html)。进程隔离不是完整安全沙箱，上线前仍需验证平台限制、入口并发/速率/请求超时与文档访问策略。
-- 下一步：React 上传与处理状态、分片预览及发布管理；之后接向量索引、混合检索和带引用问答。OCR、S3、Celery、队列监控与企业存储配额尚未实现。
+- 下一步：向量索引、混合检索和带引用问答。OCR、S3、Celery、队列监控与企业存储配额尚未实现。
 
 代码入口：api/src/agent_nexus/knowledge/ 下 router.py（HTTP）、store.py（数据与任务状态）、jobs.py（子进程调度）、process.py（解析子进程）、parsing.py（格式解析）、chunking.py（来源分片）；cli/src/agent_nexus_cli/worker.py（Worker 命令）、document.py（预览），api/tests/knowledge/（回归）。
