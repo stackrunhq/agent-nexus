@@ -1,0 +1,7 @@
+[
+  {"id":"index-capacity","query":"每个向量索引最多支持多少个分片？","expected_files":["VECTOR_SEARCH.md"]},
+  {"id":"index-stale","query":"撤回文档之后，原来的向量索引还能使用吗？","expected_files":["VECTOR_SEARCH.md"]},
+  {"id":"separate-models","query":"问答的聊天模型和 embedding 模型可以分别选择吗？","expected_files":["ANSWERS.md"]},
+  {"id":"citation-check","query":"引用编号校验能保证回答事实正确吗？","expected_files":["ANSWERS.md"]},
+  {"id":"unsupported-price","query":"这款系统的企业商业版每年准确售价是多少？","expected_files":[],"expect_refusal":true}
+]
