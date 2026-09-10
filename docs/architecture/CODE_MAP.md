@@ -80,3 +80,10 @@ agent-nexus/
 关键词检索：api/src/agent_nexus/knowledge/search.py（可读分片查询、词项和 BM25 排序）、search_router.py（企业与管理员预览）；web/src/app/features/knowledge/SearchPanel.tsx（检索与来源原文）。当前无向量索引表，不在模型网关中混入检索逻辑。
 
 向量检索：api/src/agent_nexus/knowledge/vectors.py 保存配置指纹、文档摘要与归一化向量，vector_router.py 提供构建/状态/检索 API；storage/vector_schema.py 与 0005_vectors.py 为快照表。模型协议仍由 models/gateway.py 统一。
+
+### 混合检索与引用问答
+
+- `api/src/agent_nexus/knowledge/answers.py`：RRF 融合、模型授权、单轮生成、引用校验和发布状态复查。
+- `api/src/agent_nexus/knowledge/vector_router.py`：向量、混合检索、引用问答的企业与管理员接口。
+- `web/src/app/features/knowledge/VectorPanel.tsx`：企业模型选择、索引状态和建立确认。
+- `web/src/app/features/knowledge/AnswerPanel.tsx`：聊天模型选择、问题提交和原文引用展示。

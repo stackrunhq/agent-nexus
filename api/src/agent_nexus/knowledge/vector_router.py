@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Request, Query
 from starlette.concurrency import run_in_threadpool
 from agent_nexus.core.errors import GatewayError
 from .vectors import IndexRequest, VectorSearchRequest, VectorService
+from .answers import AnswerRequest, AnswerService
 
 
 def vector_router(get_store, admin_auth, client_auth):
@@ -10,6 +11,42 @@ def vector_router(get_store, admin_auth, client_auth):
 
     def service(request):
         return VectorService(get_store().database, request.app.state.gateway)
+
+    @router.post(admin + "/hybrid-search", dependencies=[Depends(admin_auth)])
+    async def hybrid_preview(
+        tenant_id: str, app_id: str, version_id: str, body: VectorSearchRequest, request: Request
+    ):
+        return await AnswerService(get_store().database, request.app.state.gateway).hybrid(
+            tenant_id, app_id, version_id, body, request.state.request_id
+        )
+
+    @router.post(admin + "/answers", dependencies=[Depends(admin_auth)])
+    async def answer_preview(
+        tenant_id: str, app_id: str, version_id: str, body: AnswerRequest, request: Request
+    ):
+        return await AnswerService(get_store().database, request.app.state.gateway).answer(
+            tenant_id, app_id, version_id, body, request.state.request_id
+        )
+
+    @router.post(
+        "/api/v1/applications/{app_id}/versions/{version_id}/hybrid-search",
+        dependencies=[Depends(client_auth)],
+    )
+    async def hybrid_public(
+        app_id: str, version_id: str, body: VectorSearchRequest, request: Request
+    ):
+        if request.state.tenant_id is None:
+            raise GatewayError(403, "tenant_required", "A tenant-scoped identity is required")
+        return await hybrid_preview(request.state.tenant_id, app_id, version_id, body, request)
+
+    @router.post(
+        "/api/v1/applications/{app_id}/versions/{version_id}/answers",
+        dependencies=[Depends(client_auth)],
+    )
+    async def answer_public(app_id: str, version_id: str, body: AnswerRequest, request: Request):
+        if request.state.tenant_id is None:
+            raise GatewayError(403, "tenant_required", "A tenant-scoped identity is required")
+        return await answer_preview(request.state.tenant_id, app_id, version_id, body, request)
 
     @router.get(admin + "/vector-index", dependencies=[Depends(admin_auth)])
     async def status(

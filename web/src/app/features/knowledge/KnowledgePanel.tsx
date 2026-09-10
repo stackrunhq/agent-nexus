@@ -4,6 +4,7 @@ import {AdminClient} from '../../shared/client';
 import {errorLabels, statusLabels} from './types';
 import type {Chunk, KnowledgeDocument} from './types';
 import {SearchPanel} from './SearchPanel';
+import {VectorPanel} from './VectorPanel';
 
 const pageSize = 20;
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
 // Parent keys this component by version: changing scope unmounts all private state.
 export function KnowledgePanel({client, root, title, versionStatus, enabled}: Props) {
   const [documents, setDocuments] = useState<KnowledgeDocument[]>([]);
+  const [vectors, setVectors] = useState(false);
   const [offset, setOffset] = useState(0);
   const [file, setFile] = useState<File>();
   const input = useRef<HTMLInputElement>(null);
@@ -55,6 +57,8 @@ export function KnowledgePanel({client, root, title, versionStatus, enabled}: Pr
   }
   const uploadAllowed = enabled && versionStatus === 'draft';
   return <section aria-label="知识库管理"><h3>{title} · 知识库</h3>
+    <Button disabled={!enabled || versionStatus !== 'published'} onClick={() => setVectors(value => !value)}>{vectors ? '关闭向量管理' : '向量索引与检索'}</Button>
+    {vectors && enabled && versionStatus === 'published' && <VectorPanel key={`${root}:${documents.map(doc => `${doc.id}:${doc.published}`).join(',')}`} client={client} root={root.replace(/\/documents$/, '')}/>}
     <SearchPanel key={`${enabled}:${documents.map(doc => `${doc.id}:${doc.published}`).join(',')}`} client={client} root={root.replace(/\/documents$/, '/search')} enabled={enabled && versionStatus === 'published'}/>
     <p>上传 PDF、DOCX、Markdown 或 TXT，单文件不超过 10 MiB。扫描件暂不支持 OCR。解析完成后，需先发布产品版本，再单独发布文档。</p>
     {!uploadAllowed && <Alert type="info" message="仅启用企业和应用的草稿版本允许上传新文件；修订手册请创建新版本。"/>}

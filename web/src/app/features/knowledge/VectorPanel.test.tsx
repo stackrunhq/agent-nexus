@@ -1,0 +1,51 @@
+// @vitest-environment jsdom
+import {cleanup, fireEvent, render, screen, waitFor} from '@testing-library/react';
+import {afterEach, beforeEach, expect, test, vi} from 'vitest';
+import {AdminClient, ApiError} from '../../shared/client';
+import {VectorPanel} from './VectorPanel';
+beforeEach(() => {
+  Object.defineProperty(window, 'matchMedia', {writable:true, value:vi.fn(() => ({matches:false, addListener(){}, removeListener(){}, addEventListener(){}, removeEventListener(){}}))});
+  const original = window.getComputedStyle;
+  vi.spyOn(window, 'getComputedStyle').mockImplementation(element => original(element));
+});
+afterEach(() => {cleanup(); vi.restoreAllMocks();});
+const root = '/tenants/t/applications/a/versions/v';
+const models = ['local', 'cloud', 'unassigned', 'chat'].map(alias => ({alias, deployment:alias, enabled:true, capabilities:[alias === 'chat' ? 'chat' : 'embeddings']}));
+test('filters grants and capabilities, confirms builds and refreshes status', async () => {
+  const client = new AdminClient(); let built = false;
+  const request = vi.spyOn(client, 'request').mockImplementation(async (path, method) => {
+    if (path === '/models') return models as never;
+    if (path === '/tenants/t/models') return {data:['local','cloud','chat']} as never;
+    if (method === 'POST') {built = true; return {} as never;}
+    if (!built) throw new ApiError('missing', 409, 'index_missing');
+    return {status:'ready',dimensions:2,chunks:3} as never;
+  });
+  render(<VectorPanel client={client} root={root}/>);
+  await screen.findByText('local · 本地');
+  expect(screen.queryByText(/unassigned/)).toBeNull();
+  expect(screen.getByLabelText('索引模型').textContent).not.toContain('chat');
+  fireEvent.change(screen.getByLabelText('索引模型'), {target:{value:'local'}});
+  await screen.findByText('尚未建立索引');
+  fireEvent.click(screen.getByText('建立或重建索引'));
+  expect(request.mock.calls.some(call => call[1] === 'POST')).toBe(false);
+  fireEvent.click(screen.getByText('确认建立'));
+  await screen.findByText('索引可用 · 3 个分片 · 2 维');
+  expect(request).toHaveBeenCalledWith(`${root}/vector-index`, 'POST', {model:'local'}, expect.any(AbortSignal));
+});
+test('switching model cancels pending status and hides stale results', async () => {
+  const client = new AdminClient();
+  const request = vi.spyOn(client, 'request').mockImplementation(async path => {
+    if (path === '/models') return models as never;
+    if (path === '/tenants/t/models') return {data:['local','cloud']} as never;
+    return new Promise(() => {});
+  });
+  const view = render(<VectorPanel client={client} root={root}/>);
+  await screen.findByText('local · 本地');
+  fireEvent.change(screen.getByLabelText('索引模型'), {target:{value:'local'}});
+  await waitFor(() => expect(request).toHaveBeenCalledTimes(3));
+  const signal = request.mock.calls[2][3];
+  fireEvent.change(screen.getByLabelText('索引模型'), {target:{value:'cloud'}});
+  expect(signal?.aborted).toBe(true);
+  view.unmount();
+  expect(request.mock.calls[3][3]?.aborted).toBe(true);
+});

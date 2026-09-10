@@ -35,3 +35,5 @@ python -m pip install -e '.[dev]'
 构建路径依据 [Vite build](https://vite.dev/guide/build)；组件用法参照 [Ant Design Modal](https://5x.ant.design/components/modal/)。
 
 知识库 SearchPanel.tsx 提供已发布版本的关键词检索、无命中提示及来源原文；不生成模型回答。页面关闭取消请求，发布状态变化清除结果。
+
+知识库的“向量索引与检索”入口支持本地/云端 embedding 模型选择、索引管理、混合检索和独立聊天模型引用问答。页面按纯文本展示来源；详见 [操作说明](../docs/ANSWERS.md)。

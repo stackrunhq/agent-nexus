@@ -1,3 +1,6 @@
+export class ApiError extends Error {
+  constructor(message: string, public status: number, public code?: string) {super(message);}
+}
 export class AdminClient {
   private generation = 0;
   private token = '';
@@ -58,7 +61,7 @@ export class AdminClient {
       if (response.status === 401 && this.token.startsWith('ns_')) {
         this.disconnect(); this.onExpired?.();
       }
-      if (!response.ok) throw new Error(`${data?.error?.message || '请求失败'}（${response.status}），请求 ID：${data?.request_id || '—'}`);
+      if (!response.ok) throw new ApiError(`${data?.error?.message || '请求失败'}（${response.status}），请求 ID：${data?.request_id || '—'}`, response.status, data?.error?.code);
       if (response.status !== 204 && data === undefined) throw new Error('服务返回了无法识别的响应，请稍后刷新。');
       return data as T;
     } finally { this.pending.delete(controller); signal?.removeEventListener('abort', abort); }

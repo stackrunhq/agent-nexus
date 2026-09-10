@@ -91,6 +91,10 @@ class Gateway:
 
     async def chat(self, request: ChatRequest, request_id: str):
         config = await run_in_threadpool(self.resolve, request.model, "chat")
+        return await self.chat_config(config, request, request_id)
+
+    async def chat_config(self, config, request: ChatRequest, request_id: str):
+        self.check_host(config)
         if request.temperature is not None and not config.supports_temperature:
             raise GatewayError(422, "unsupported_parameter", "Model does not support temperature")
         limit = request.max_tokens or config.max_output_tokens
