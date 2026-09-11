@@ -1,0 +1,10 @@
+# Add after compose.postgres.yaml. Provision extension/cache before enabling the backend.
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg17
+  api:
+    environment:
+      NEXUS_VECTOR_BACKEND: pgvector
+  index-worker:
+    environment:
+      NEXUS_VECTOR_BACKEND: pgvector

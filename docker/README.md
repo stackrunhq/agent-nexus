@@ -34,3 +34,5 @@ Compose 新增独立 worker 服务，使用同一数据库处理知识库队列�
 NEXUS_MODEL_DAILY_LIMIT 默认每企业每日 1000 次模型调用；API 与 index-worker 必须保持相同配置。0 暂停新模型调用，不取消已开始的调用。
 
 当前数据库 0009，新增 tenant_model_quotas，共 18 张业务表。企业模型调用限额覆盖全局默认值；升级前停止 API/Worker 并备份。
+
+可选增加 compose.pgvector.yaml，在 PostgreSQL 覆盖文件之后加载。必须先初始化扩展与派生缓存，再启动后端并重建索引。详见 [pgvector 部署](../docs/PGVECTOR.md)。

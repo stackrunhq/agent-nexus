@@ -83,6 +83,8 @@ agent-nexus/
 
 ### 混合检索与引用问答
 
+- `knowledge/pgvector_backend.py`：原生派生缓存写入与余弦排序；`cli/src/agent_nexus_cli/pgvector.py`：显式扩展/缓存初始化。
+
 - `models/usage.py` 中 ModelQuotaPolicy/get_policy/put_policy：企业模型准入覆盖值；`storage/model_quota_schema.py` 和 0009 迁移定义持久表。
 - `web/src/app/features/knowledge/ModelQuotaPanel.tsx`：模型限额读取与确认保存。
 

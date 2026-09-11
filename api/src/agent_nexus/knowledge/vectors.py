@@ -17,6 +17,7 @@ from agent_nexus.models.store import ModelStore
 from agent_nexus.storage.database import metadata
 from agent_nexus.tenants.store import TenantStore
 from .search import readable_chunks
+from . import pgvector_backend
 
 indexes = metadata.tables["knowledge_vector_indexes"]
 MAX_INDEX_CHUNKS = 128
@@ -97,6 +98,9 @@ class VectorService:
         }
 
     async def build(self, tenant, app, version, model, actor, request_id, on_save=None):
+        native = pgvector_backend.enabled(self.database)
+        if native:
+            await run_in_threadpool(pgvector_backend.check, self.database)
         rows, config = await run_in_threadpool(self.snapshot, tenant, app, version, model)
         if not rows or len(rows) > MAX_INDEX_CHUNKS:
             raise GatewayError(409, "index_capacity", "Indexing requires 1..128 published chunks")
@@ -152,6 +156,8 @@ class VectorService:
                 ApplicationStore.record(
                     db, app, actor, request_id, "vector_index_built:" + model, version
                 )
+                if native:
+                    pgvector_backend.save(db, version, model, serialized)
 
         await run_in_threadpool(save)
         return {
@@ -162,6 +168,7 @@ class VectorService:
         }
 
     async def search(self, tenant, app, version, body, request_id):
+        native = pgvector_backend.enabled(self.database)
         if not body.query.strip():
             raise GatewayError(422, "invalid_query", "Query must not be blank")
         rows, config = await run_in_threadpool(self.snapshot, tenant, app, version, body.model)
@@ -173,6 +180,8 @@ class VectorService:
                 "index_stale",
                 "Published content or model configuration changed; rebuild the index",
             )
+        if native:
+            await run_in_threadpool(pgvector_backend.check, self.database)
         embedded = await self.gateway.embed_config(
             config,
             EmbeddingRequest(model=body.model, input=[body.query]),
@@ -188,6 +197,27 @@ class VectorService:
         rows = await run_in_threadpool(
             self.validate_snapshot, tenant, app, version, body.model, content_hash, model_hash
         )
+        if native:
+            ranked = await run_in_threadpool(
+                pgvector_backend.rank,
+                self.database,
+                version,
+                body.model,
+                index["payload"],
+                query,
+                body.limit,
+            )
+            rows = await run_in_threadpool(
+                self.validate_snapshot, tenant, app, version, body.model, content_hash, model_hash
+            )
+            return {
+                "data": [
+                    {**rows[item["ordinal"]], "version_id": version, "score": item["score"]}
+                    for item in ranked
+                ],
+                "method": "pgvector_cosine",
+                "model": body.model,
+            }
         vectors = json.loads(index["payload"])
         results = [
             {
