@@ -176,7 +176,7 @@ def test_0003_requires_upgrade(tmp_path):
     upgrade(path)
     database = Database(path)
     try:
-        assert database.check()["revision"] == "0007"
+        assert database.check()["revision"] == "0008"
     finally:
         database.close()
 

@@ -102,6 +102,7 @@ class AnswerService(VectorService):
                 ],
             ),
             request_id,
+            tenant_id=tenant,
         )
         await run_in_threadpool(
             self.validate_snapshot, tenant, app, version, body.model, content_hash, model_hash

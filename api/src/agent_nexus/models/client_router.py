@@ -22,13 +22,17 @@ def client_model_router(client_auth, allowed_models, authorize_model):
     )
     async def chat(body: ChatRequest, request: Request):
         await run_in_threadpool(authorize_model, request, body.model)
-        return await request.app.state.gateway.chat(body, request.state.request_id)
+        return await request.app.state.gateway.chat(
+            body, request.state.request_id, tenant_id=request.state.tenant_id
+        )
 
     @router.post(
         "/api/v1/embeddings", dependencies=[Depends(client_auth)], response_model=EmbeddingResponse
     )
     async def embed(body: EmbeddingRequest, request: Request):
         await run_in_threadpool(authorize_model, request, body.model)
-        return await request.app.state.gateway.embed(body, request.state.request_id)
+        return await request.app.state.gateway.embed(
+            body, request.state.request_id, tenant_id=request.state.tenant_id
+        )
 
     return router

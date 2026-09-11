@@ -1,6 +1,7 @@
 """Platform administrator endpoints for tenant credentials and model grants."""
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Query
+from agent_nexus.models.usage import UsageStore
 from .quotas import QuotaPolicy, QuotaStore
 from .schemas import TenantCreate, TenantStatus
 
@@ -46,6 +47,14 @@ def tenant_router(get_store, admin_auth):
     @router.get("/{tenant_id}/index-quota")
     def get_quota(tenant_id: str):
         return QuotaStore(get_store().database).get(tenant_id)
+
+    @router.get("/{tenant_id}/model-calls")
+    def model_calls(
+        tenant_id: str,
+        offset: int = Query(default=0, ge=0, le=100000),
+        limit: int = Query(default=20, ge=1, le=100),
+    ):
+        return UsageStore(get_store().database).list(tenant_id, offset, limit)
 
     @router.put("/{tenant_id}/index-quota")
     def put_quota(tenant_id: str, body: QuotaPolicy, request: Request):

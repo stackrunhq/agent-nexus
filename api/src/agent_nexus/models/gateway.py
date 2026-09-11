@@ -2,6 +2,7 @@ import asyncio
 import json
 import math
 import os
+import time
 from urllib.parse import urlsplit
 
 import httpx
@@ -89,11 +90,37 @@ class Gateway:
                 502, "invalid_provider_response", "Provider returned an invalid response"
             ) from None
 
-    async def chat(self, request: ChatRequest, request_id: str):
+    async def chat(self, request: ChatRequest, request_id: str, tenant_id=None):
         config = await run_in_threadpool(self.resolve, request.model, "chat")
-        return await self.chat_config(config, request, request_id)
+        return await self.chat_config(config, request, request_id, tenant_id=tenant_id)
 
-    async def chat_config(self, config, request: ChatRequest, request_id: str):
+    async def chat_config(self, config, request: ChatRequest, request_id: str, tenant_id=None):
+        return await self.metered(config, request, request_id, tenant_id, "chat", self._chat_config)
+
+    async def metered(self, config, request, request_id, tenant_id, capability, invoke):
+        if tenant_id is None:
+            return await invoke(config, request, request_id)
+        from .usage import UsageStore
+
+        store = UsageStore(self.store.database)
+        identifier = await run_in_threadpool(store.start, tenant_id, config, capability, request_id)
+        started = time.monotonic()
+        try:
+            result = await invoke(config, request, request_id)
+        except Exception as exc:
+            await run_in_threadpool(
+                store.finish,
+                identifier,
+                int((time.monotonic() - started) * 1000),
+                error=exc.code if isinstance(exc, GatewayError) else "invocation_failed",
+            )
+            raise
+        await run_in_threadpool(
+            store.finish, identifier, int((time.monotonic() - started) * 1000), result=result
+        )
+        return result
+
+    async def _chat_config(self, config, request: ChatRequest, request_id: str):
         self.check_host(config)
         if request.temperature is not None and not config.supports_temperature:
             raise GatewayError(422, "unsupported_parameter", "Model does not support temperature")
@@ -149,11 +176,18 @@ class Gateway:
                 502, "invalid_provider_response", "Provider returned an invalid chat response"
             ) from None
 
-    async def embed(self, request: EmbeddingRequest, request_id: str):
+    async def embed(self, request: EmbeddingRequest, request_id: str, tenant_id=None):
         config = await run_in_threadpool(self.resolve, request.model, "embeddings")
-        return await self.embed_config(config, request, request_id)
+        return await self.embed_config(config, request, request_id, tenant_id=tenant_id)
 
-    async def embed_config(self, config, request: EmbeddingRequest, request_id: str):
+    async def embed_config(
+        self, config, request: EmbeddingRequest, request_id: str, tenant_id=None
+    ):
+        return await self.metered(
+            config, request, request_id, tenant_id, "embeddings", self._embed_config
+        )
+
+    async def _embed_config(self, config, request: EmbeddingRequest, request_id: str):
         """Internal immutable configuration snapshot for multi-batch indexing."""
         body = {"model": config.model, "input": request.input}
         if config.provider == "ollama":

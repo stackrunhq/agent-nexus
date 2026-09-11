@@ -83,6 +83,10 @@ agent-nexus/
 
 ### 混合检索与引用问答
 
+- `api/src/agent_nexus/models/usage.py`：调用前登记、结果入账及租户分页查询；`models/gateway.py` 统一计量入口。
+- `storage/model_usage_schema.py` / `0008_model_usage.py`：调用账本表与冻结迁移。
+- `web/src/app/features/knowledge/ModelCallsPanel.tsx`：调用状态、token、耗时和分页展示。
+
 - `api/src/agent_nexus/tenants/quotas.py`：企业覆盖限额、默认继承、修改审计；`storage/quota_schema.py` 与 0007 迁移定义表。
 - `web/src/app/features/knowledge/QuotaPanel.tsx`：企业限额读取、确认修改和恢复继承。
 

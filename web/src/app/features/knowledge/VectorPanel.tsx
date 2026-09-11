@@ -4,6 +4,7 @@ import {AdminClient, ApiError} from '../../shared/client';
 import {SearchPanel} from './SearchPanel';
 import {AnswerPanel} from './AnswerPanel';
 import {QuotaPanel} from './QuotaPanel';
+import {ModelCallsPanel} from './ModelCallsPanel';
 
 interface Model {alias: string; enabled: boolean; capabilities: string[]; deployment: string}
 interface Index {status: 'ready' | 'stale'; dimensions: number; chunks: number}
@@ -16,6 +17,7 @@ export function VectorPanel({client, root}: {client: AdminClient; root: string})
   const [error, setError] = useState('');
   const [alias, setAlias] = useState('');
   const [editQuota, setEditQuota] = useState(false);
+  const [showCalls, setShowCalls] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     void Promise.all([
@@ -32,6 +34,8 @@ export function VectorPanel({client, root}: {client: AdminClient; root: string})
   return <section aria-label="向量索引管理"><h4>模型选择与索引管理</h4>
     <Button onClick={() => setEditQuota(value => !value)}>{editQuota ? '关闭限额设置' : '设置企业索引限额'}</Button>
     {editQuota && <QuotaPanel client={client} root={root.split('/applications/')[0]}/>}
+    <Button onClick={() => setShowCalls(value => !value)}>{showCalls ? '关闭调用账本' : '查看模型调用账本'}</Button>
+    {showCalls && <ModelCallsPanel client={client} root={root.split('/applications/')[0]}/>}
     {error && <Alert type="error" message={error}/>}
     <p>仅显示本企业已授权且启用的 embedding 模型。修改授权后请关闭并重新打开面板。</p>
     {loaded && !models.length && <p>没有可用模型，请在模型配置及企业授权中启用 embedding 模型。</p>}

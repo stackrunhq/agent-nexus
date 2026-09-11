@@ -6,7 +6,7 @@
 
 - 不设置 `NEXUS_DATABASE_URL`：使用 `NEXUS_DATABASE_PATH` 的 SQLite 文件，保留开发环境自动创建缺失表的行为。
 - 设置 `NEXUS_DATABASE_URL=postgresql+psycopg://用户名:密码@主机:5432/数据库名`：使用 PostgreSQL，URL 优先于文件路径。用户名、密码中的特殊字符需要 URL 编码，不把真实连接串加入 Git。
-- PostgreSQL 启动前必须迁移至 0007，缺少版本或版本不匹配时 API 拒绝启动。API 不自动执行生产迁移。
+- PostgreSQL 启动前必须迁移至 0008，缺少版本或版本不匹配时 API 拒绝启动。API 不自动执行生产迁移。
 
 ## 原生迁移
 
@@ -66,7 +66,7 @@ python -m agent_nexus.db_cli import-sqlite --source /absolute/path/old-nexus.db
 
 诊断命令：`python -m agent_nexus.db_cli check`，使用同一套数据库环境变量。成功只返回 backend、revision 和 status；失败退出码为 1，不输出连接串、SQL 参数或凭据。缺失的 SQLite 文件不会被诊断命令创建。
 
-`/health/live` 仅表示进程存活；`/health/ready` 以零行查询核验全部业务表/字段和版本，不扫描或解析模型数据，失败返回 503 database_not_ready。它不验证模型服务、记录内容、数据库写权限或所有索引约束。SQLite 旧库允许 unversioned，已登记库只接受 0007。
+`/health/live` 仅表示进程存活；`/health/ready` 以零行查询核验全部业务表/字段和版本，不扫描或解析模型数据，失败返回 503 database_not_ready。它不验证模型服务、记录内容、数据库写权限或所有索引约束。SQLite 旧库允许 unversioned，已登记库只接受 0008。
 
 数据库请求异常返回 503 database_unavailable，并提供请求 ID；不要将其视为自动重试写操作的授权。PostgreSQL 连接池等待上限为 5 秒，写事务的锁等待上限为 5 秒，连接建立上限为 10 秒；这些不是完整请求总时限，也不替代查询超时策略。数据库故障诊断与记录内容评估分开进行。
 
@@ -79,3 +79,5 @@ SQLite 回归、导入校验和回滚已自动测试。PostgreSQL 集成测试�
 当前新增 0006 knowledge_index_jobs 持久任务表，共 15 张业务表。升级前停止 API、解析 Worker 和索引 Worker 并备份；后台索引操作与部署见 [索引任务](INDEX_JOBS.md)。
 
 当前数据库为 0007，新增 tenant_index_quotas，共 16 张业务表；升级前停止 API 与 Worker 并备份。企业差异化限额通过 index-quota 管理接口配置。
+
+当前数据库 0008 新增 model_calls，17 张业务表，覆盖企业网关调用结果及上游 token 账本。升级前备份并停止 API/Worker；调用次数与 token 配额尚未实现。

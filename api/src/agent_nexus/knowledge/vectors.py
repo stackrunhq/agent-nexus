@@ -108,7 +108,9 @@ class VectorService:
                 for start in range(0, len(rows), 16):
                     batch = rows[start : start + 16]
                     request = EmbeddingRequest(model=model, input=[row["text"] for row in batch])
-                    result = await self.gateway.embed_config(config, request, request_id)
+                    result = await self.gateway.embed_config(
+                        config, request, request_id, tenant_id=tenant
+                    )
                     if dimensions is not None and result.dimensions != dimensions:
                         raise GatewayError(
                             502,
@@ -172,7 +174,10 @@ class VectorService:
                 "Published content or model configuration changed; rebuild the index",
             )
         embedded = await self.gateway.embed_config(
-            config, EmbeddingRequest(model=body.model, input=[body.query]), request_id
+            config,
+            EmbeddingRequest(model=body.model, input=[body.query]),
+            request_id,
+            tenant_id=tenant,
         )
         query = unit(embedded.vectors[0])
         if len(query) != index["dimensions"]:

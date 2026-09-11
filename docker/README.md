@@ -1,6 +1,6 @@
 # 容器部署
 
-**已有 0001/0002/0003/0004/0005 数据库须先备份并升级到 0007。** SQLite：暂停 API 和 Worker 后执行 `docker compose --project-directory . -f docker/compose.yaml run --rm --build api python -m agent_nexus.db_cli upgrade`，再启动 API 和 Worker；PostgreSQL 使用覆盖配置执行 migrate 服务，见 DATABASE.md。
+**已有 0001/0002/0003/0004/0005 数据库须先备份并升级到 0008。** SQLite：暂停 API 和 Worker 后执行 `docker compose --project-directory . -f docker/compose.yaml run --rm --build api python -m agent_nexus.db_cli upgrade`，再启动 API 和 Worker；PostgreSQL 使用覆盖配置执行 migrate 服务，见 DATABASE.md。
 
 以下命令均从仓库根执行，先配置根 .env。显式项目目录保持根环境文件、构建上下文和默认项目名称一致；已有部署使用过 -p 的继续指定原名称，以复用数据卷。
 
@@ -23,8 +23,10 @@ Compose 新增独立 worker 服务，使用同一数据库处理知识库队列�
 
 本轮混合检索和引用问答复用 API 进程与网关配置，数据库已升级为 0006，新增索引 Worker 服务。部署后在知识库管理中先建立索引，再选择已授权聊天模型。页面通过索引 Worker 后台构建，解析 Worker 仍只负责文件解析。见 [问答说明](../docs/ANSWERS.md)。
 
-新增 index-worker 服务，消费持久化索引任务；部署前升级至 0007。页面构建操作已改为提交后台任务，详见 [索引任务](../docs/INDEX_JOBS.md)。
+新增 index-worker 服务，消费持久化索引任务；部署前升级至 0008。页面构建操作已改为提交后台任务，详见 [索引任务](../docs/INDEX_JOBS.md)。
 
 索引构建额度由 NEXUS_INDEX_DAILY_LIMIT 配置，默认每企业每天 100 个新任务（UTC 日）。所有 API 副本须使用同值。同步和后台构建共用额度，详见 [索引配额](../docs/INDEX_QUOTAS.md)。
 
 当前数据库为 0007，新增 tenant_index_quotas，共 16 张业务表；升级前停止 API 与 Worker 并备份。企业差异化限额通过 index-quota 管理接口配置。
+
+当前数据库 0008 新增 model_calls，17 张业务表，覆盖企业网关调用结果及上游 token 账本。升级前备份并停止 API/Worker；调用次数与 token 配额尚未实现。
