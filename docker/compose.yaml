@@ -10,6 +10,7 @@ services:
       NEXUS_CLIENT_TOKEN: ${NEXUS_CLIENT_TOKEN:-}
       NEXUS_AUTH_MODE: ${NEXUS_AUTH_MODE:-bootstrap}
       NEXUS_INDEX_DAILY_LIMIT: ${NEXUS_INDEX_DAILY_LIMIT:-100}
+      NEXUS_MODEL_DAILY_LIMIT: ${NEXUS_MODEL_DAILY_LIMIT:-1000}
       NEXUS_ALLOWED_HOSTS: ${NEXUS_ALLOWED_HOSTS:-localhost,127.0.0.1,host.docker.internal}
       NEXUS_DATABASE_PATH: /app/data/nexus.db
       NEXUS_DATABASE_URL: ${NEXUS_DATABASE_URL:-}
@@ -43,6 +44,7 @@ services:
       service: worker
     command: ["python", "-m", "agent_nexus_cli.worker", "--queue", "indexes"]
     environment:
+      NEXUS_MODEL_DAILY_LIMIT: ${NEXUS_MODEL_DAILY_LIMIT:-1000}
       NEXUS_ALLOWED_HOSTS: ${NEXUS_ALLOWED_HOSTS:-localhost,127.0.0.1,host.docker.internal}
       NEXUS_PROVIDER_CLOUD_KEY: ${NEXUS_PROVIDER_CLOUD_KEY:-}
     extra_hosts:

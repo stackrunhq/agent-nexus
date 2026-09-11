@@ -29,6 +29,9 @@ class Settings:
         )
 
     def validate(self):
+        from agent_nexus.models.usage import daily_limit
+
+        daily_limit()
         try:
             index_limit = int(os.getenv("NEXUS_INDEX_DAILY_LIMIT", "100"))
             if not 1 <= index_limit <= 100000:

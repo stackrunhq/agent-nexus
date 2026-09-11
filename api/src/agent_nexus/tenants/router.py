@@ -56,6 +56,10 @@ def tenant_router(get_store, admin_auth):
     ):
         return UsageStore(get_store().database).list(tenant_id, offset, limit)
 
+    @router.get("/{tenant_id}/model-usage")
+    def model_usage(tenant_id: str):
+        return UsageStore(get_store().database).summary(tenant_id)
+
     @router.put("/{tenant_id}/index-quota")
     def put_quota(tenant_id: str, body: QuotaPolicy, request: Request):
         return QuotaStore(get_store().database).put(

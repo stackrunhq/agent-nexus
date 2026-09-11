@@ -30,3 +30,5 @@ Compose 新增独立 worker 服务，使用同一数据库处理知识库队列�
 当前数据库为 0007，新增 tenant_index_quotas，共 16 张业务表；升级前停止 API 与 Worker 并备份。企业差异化限额通过 index-quota 管理接口配置。
 
 当前数据库 0008 新增 model_calls，17 张业务表，覆盖企业网关调用结果及上游 token 账本。升级前备份并停止 API/Worker；调用次数与 token 配额尚未实现。
+
+NEXUS_MODEL_DAILY_LIMIT 默认每企业每日 1000 次模型调用；API 与 index-worker 必须保持相同配置。0 暂停新模型调用，不取消已开始的调用。

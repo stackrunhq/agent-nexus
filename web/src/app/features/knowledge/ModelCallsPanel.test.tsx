@@ -6,7 +6,7 @@ import {ModelCallsPanel} from './ModelCallsPanel';
 afterEach(() => {cleanup(); vi.restoreAllMocks();});
 test('renders unknown usage without treating it as zero and cancels pending reads', async () => {
   const client = new AdminClient();
-  const request = vi.spyOn(client, 'request').mockResolvedValue({data:[{id:'c',request_id:'r',model:'local',capability:'chat',status:'pending',created_at:1,elapsed_ms:null,input_tokens:null,output_tokens:null,error:null}]} as never);
+  const request = vi.spyOn(client, 'request').mockImplementation(async path => path.endsWith('/model-usage') ? {daily_used:1,daily_limit:1000,reset_at:86400} as never : {data:[{id:'c',request_id:'r',model:'local',capability:'chat',status:'pending',created_at:1,elapsed_ms:null,input_tokens:null,output_tokens:null,error:null}]} as never);
   const view = render(<ModelCallsPanel client={client} root="/tenants/t"/>);
   await screen.findByText(/输入 token：未知/);
   expect(request).toHaveBeenCalledWith('/tenants/t/model-calls?offset=0&limit=20', 'GET', undefined, expect.any(AbortSignal));
@@ -14,5 +14,5 @@ test('renders unknown usage without treating it as zero and cancels pending read
   request.mockImplementation(() => new Promise(() => {}));
   const pending = render(<ModelCallsPanel client={client} root="/tenants/b"/>);
   pending.unmount();
-  expect(request.mock.calls[1][3]?.aborted).toBe(true);
+  expect(request.mock.calls[2][3]?.aborted).toBe(true);
 });
