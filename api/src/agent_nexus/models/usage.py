@@ -3,7 +3,7 @@
 import time
 import os
 from uuid import uuid4
-from sqlalchemy import select, func
+from sqlalchemy import select, func, case
 from agent_nexus.core.errors import GatewayError
 from agent_nexus.storage.database import metadata
 from agent_nexus.tenants.store import TenantStore
@@ -64,7 +64,36 @@ class UsageStore:
     def summary(self, tenant):
         with self.database.read() as db:
             TenantStore.require(db, tenant)
-            return self._summary(db, tenant, int(time.time()))
+            now = int(time.time())
+            result = self._summary(db, tenant, now)
+            result["models"] = [
+                dict(row)
+                for row in db.execute(
+                    select(
+                        calls.c.model,
+                        calls.c.capability,
+                        func.count().label("calls"),
+                        func.sum(case((calls.c.status == "succeeded", 1), else_=0)).label(
+                            "succeeded"
+                        ),
+                        func.sum(case((calls.c.status == "failed", 1), else_=0)).label("failed"),
+                        func.sum(case((calls.c.status == "pending", 1), else_=0)).label("pending"),
+                        func.sum(calls.c.input_tokens).label("known_input_tokens"),
+                        func.sum(calls.c.output_tokens).label("known_output_tokens"),
+                        func.sum(case((calls.c.input_tokens.is_(None), 1), else_=0)).label(
+                            "unknown_input_calls"
+                        ),
+                        func.sum(case((calls.c.output_tokens.is_(None), 1), else_=0)).label(
+                            "unknown_output_calls"
+                        ),
+                    )
+                    .where(calls.c.tenant_id == tenant, calls.c.created_at >= now - now % 86400)
+                    .group_by(calls.c.model, calls.c.capability)
+                    .order_by(calls.c.model, calls.c.capability)
+                ).mappings()
+            ]
+            result["daily_used"] = sum(row["calls"] for row in result["models"])
+            return result
 
     def finish(self, identifier, elapsed_ms, result=None, error=None):
         with self.database.write("model-call:" + identifier) as db:

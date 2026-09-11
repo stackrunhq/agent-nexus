@@ -1,5 +1,9 @@
 # 企业模型调用账本
 
+## 当日模型汇总
+
+`GET /api/v1/admin/tenants/{tenant_id}/model-usage` 增加 models 数组，按模型别名和能力汇总 UTC 当日调用数、成功/失败/pending 数及已知输入/输出 token 合计，同时返回 unknown_input_calls、unknown_output_calls。全部未知时合计为 null；部分未知时合计只是已知部分。页面调用账本同步展示汇总，明细分页仍包含历史记录。模型配置变更后相同别名合并统计，配置指纹仍可在明细接口核对；不是费用或模型版本对账报表。
+
 ## 每日调用准入
 
 `NEXUS_MODEL_DAILY_LIMIT` 默认 1000，允许 0–1000000；0 暂停新模型调用。各企业共用相同上限、分别计数，所有 API 副本和索引 Worker 必须配置一致，Compose 已传递变量。UTC 零点重置；成功、失败、pending 都计数，不自动退还。检查和登记共用数据库事务锁，超额返回 `429/model_daily_quota_exceeded`，不调用上游、不新增记录。

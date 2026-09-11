@@ -2,9 +2,11 @@ import {useEffect, useRef, useState} from 'react';
 import {Alert, Button} from 'antd';
 import {AdminClient} from '../../shared/client';
 interface Call {id: string; request_id: string; model: string; capability: string; status: string; created_at: number; elapsed_ms: number | null; input_tokens: number | null; output_tokens: number | null; error: string | null}
+interface ModelTotal {model:string;capability:string;calls:number;succeeded:number;failed:number;pending:number;known_input_tokens:number|null;known_output_tokens:number|null;unknown_input_calls:number;unknown_output_calls:number}
+interface Summary {daily_used:number;daily_limit:number;reset_at:number;models?:ModelTotal[]}
 export function ModelCallsPanel({client, root}: {client: AdminClient; root: string}) {
   const [rows, setRows] = useState<Call[]>([]);
-  const [usage, setUsage] = useState<{daily_used:number;daily_limit:number;reset_at:number}>();
+  const [usage, setUsage] = useState<Summary>();
   const [offset, setOffset] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -13,7 +15,7 @@ export function ModelCallsPanel({client, root}: {client: AdminClient; root: stri
     if (pending.current) return;
     const controller = new AbortController(); pending.current = controller; setBusy(true); setError('');
     try {
-      const summary = await client.request<{daily_used:number;daily_limit:number;reset_at:number}>(`${root}/model-usage`, 'GET', undefined, controller.signal);
+      const summary = await client.request<Summary>(`${root}/model-usage`, 'GET', undefined, controller.signal);
       if (controller.signal.aborted) return;
       setUsage(summary);
       const result = await client.request<{data: Call[]}>(`${root}/model-calls?offset=${start}&limit=20`, 'GET', undefined, controller.signal);
@@ -25,6 +27,10 @@ export function ModelCallsPanel({client, root}: {client: AdminClient; root: stri
   return <section aria-label="企业模型调用账本"><h4>企业模型调用账本</h4>
     <p>包含该企业全部应用的模型调用。未知 token 不按零计算；成功只表示模型调用成功，不代表最终业务成功。待确认记录可能已产生上游费用。</p>
     {usage && <p>今日模型调用 {usage.daily_used}/{usage.daily_limit} · 重置时间 {new Date(usage.reset_at * 1000).toLocaleString()}。按模型调用次数计量，问答或索引可能消耗多次。</p>}
+    {usage?.models?.map(total => <article key={`${total.model}:${total.capability}`}><h5>今日 · {total.model} · {total.capability}</h5>
+      <p>调用 {total.calls} · 成功 {total.succeeded} · 失败 {total.failed} · 待确认 {total.pending}</p>
+      <p>已知输入 token：{total.known_input_tokens ?? '未知'}（{total.unknown_input_calls} 次未返回）；已知输出 token：{total.known_output_tokens ?? '未知'}（{total.unknown_output_calls} 次未返回）。已知合计不代表完整用量。</p>
+    </article>)}
     {error && <Alert type="error" message={error}/>}
     <Button disabled={busy} onClick={() => void load(0)}>刷新调用记录</Button>
     {!busy && !rows.length && <p>暂无调用记录。</p>}
