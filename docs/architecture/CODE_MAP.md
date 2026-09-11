@@ -83,6 +83,9 @@ agent-nexus/
 
 ### 混合检索与引用问答
 
+- `models/usage.py` 中 ModelQuotaPolicy/get_policy/put_policy：企业模型准入覆盖值；`storage/model_quota_schema.py` 和 0009 迁移定义持久表。
+- `web/src/app/features/knowledge/ModelQuotaPanel.tsx`：模型限额读取与确认保存。
+
 - `api/src/agent_nexus/models/usage.py`：调用前登记、结果入账及租户分页查询；`models/gateway.py` 统一计量入口。
 - `storage/model_usage_schema.py` / `0008_model_usage.py`：调用账本表与冻结迁移。
 - `web/src/app/features/knowledge/ModelCallsPanel.tsx`：调用状态、token、耗时和分页展示。

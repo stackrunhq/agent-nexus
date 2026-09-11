@@ -8,8 +8,15 @@ from agent_nexus.core.errors import GatewayError
 from agent_nexus.storage.database import metadata
 from agent_nexus.tenants.store import TenantStore
 from .store import ModelStore
+from pydantic import Field
+from agent_nexus.core.schemas import StrictModel
 
 calls = metadata.tables["model_calls"]
+quotas = metadata.tables["tenant_model_quotas"]
+
+
+class ModelQuotaPolicy(StrictModel):
+    daily_limit: int | None = Field(default=None, ge=0, le=1000000, strict=True)
 
 
 def daily_limit():
@@ -25,6 +32,33 @@ def daily_limit():
 class UsageStore:
     def __init__(self, database):
         self.database = database
+
+    def policy(self, db, tenant):
+        TenantStore.require(db, tenant)
+        value = db.execute(
+            select(quotas.c.daily_limit).where(quotas.c.tenant_id == tenant)
+        ).scalar_one_or_none()
+        return {
+            "daily_limit": value,
+            "effective_daily_limit": value if value is not None else daily_limit(),
+        }
+
+    def get_policy(self, tenant):
+        with self.database.read() as db:
+            return self.policy(db, tenant)
+
+    def put_policy(self, tenant, body, actor, request_id):
+        with self.database.write("model-usage:" + tenant) as db:
+            TenantStore.require(db, tenant)
+            db.execute(quotas.delete().where(quotas.c.tenant_id == tenant))
+            db.execute(quotas.insert().values(tenant_id=tenant, daily_limit=body.daily_limit))
+            TenantStore.record(
+                db,
+                tenant,
+                "model_quota_updated",
+                alias=f"actor={actor};request={request_id};daily={body.daily_limit}",
+            )
+            return self.policy(db, tenant)
 
     def start(self, tenant, config, capability, request_id):
         identifier = str(uuid4())
@@ -59,7 +93,11 @@ class UsageStore:
             .select_from(calls)
             .where(calls.c.tenant_id == tenant, calls.c.created_at >= start)
         ).scalar_one()
-        return {"daily_used": count, "daily_limit": daily_limit(), "reset_at": start + 86400}
+        return {
+            "daily_used": count,
+            "daily_limit": self.policy(db, tenant)["effective_daily_limit"],
+            "reset_at": start + 86400,
+        }
 
     def summary(self, tenant):
         with self.database.read() as db:

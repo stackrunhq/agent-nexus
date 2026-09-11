@@ -27,6 +27,7 @@ from .vector_schema import define_vector_tables
 from .index_job_schema import define_index_job_tables
 from .quota_schema import define_quota_tables
 from .model_usage_schema import define_model_usage_tables
+from .model_quota_schema import define_model_quota_tables
 
 metadata = MetaData()
 models = Table(
@@ -79,6 +80,7 @@ define_vector_tables(metadata)
 define_index_job_tables(metadata)
 define_quota_tables(metadata)
 define_model_usage_tables(metadata)
+define_model_quota_tables(metadata)
 
 
 def connection_url(target: str):
@@ -119,14 +121,14 @@ class Database:
                     with self.write("schema") as db:
                         if inspect(db).has_table("alembic_version") and (
                             run(db, "SELECT version_num FROM alembic_version").scalar_one()
-                            != "0008"
+                            != "0009"
                         ):
                             raise RuntimeError("Run the explicit schema upgrade first")
                         metadata.create_all(db)
                 else:
                     with self.read() as db:
                         revision = run(db, "SELECT version_num FROM alembic_version").scalar_one()
-                        if revision != "0008":
+                        if revision != "0009":
                             raise RuntimeError("Database schema is not at the supported revision")
             except Exception:
                 self.engine.dispose()
@@ -146,7 +148,7 @@ class Database:
                 db.execute(select(table).limit(0)).close()
             if inspect(db).has_table("alembic_version"):
                 revision = run(db, "SELECT version_num FROM alembic_version").scalar_one()
-                if revision != "0008":
+                if revision != "0009":
                     raise RuntimeError("Unsupported schema revision")
             elif self.sqlite:
                 revision = "unversioned"

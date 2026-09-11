@@ -1,5 +1,13 @@
 # 企业模型调用账本
 
+## 企业模型调用限额（0009）
+
+管理员 `GET/PUT /api/v1/admin/tenants/{tenant_id}/model-quota` 读取/替换配置。请求 `{"daily_limit":2000}`，允许 0–1000000；null 或省略恢复继承 NEXUS_MODEL_DAILY_LIMIT。响应返回 daily_limit 与 effective_daily_limit。企业覆盖值优先，包括环境默认值为 0 时；全局环境值不是覆盖所有企业的紧急停用开关。
+
+配置持久化到 tenant_model_quotas，与调用准入共用企业锁；修改记录企业审计事件（操作者、请求 ID、新值）。降低限额不清零用量、不取消已开始的调用，跨日恢复额度仍按 UTC。API/Worker 共享数据库即共享覆盖值，未覆盖企业仍要求全局环境配置一致。
+
+页面入口：调用账本 → 设置企业模型限额，保存需确认。多人修改以最后一次保存为准，可重新读取。数据库升级到 0009，共 18 张业务表，覆盖值随备份恢复；运行角色需新表读写权限。不是 token 或费用限额。
+
 ## 当日模型汇总
 
 `GET /api/v1/admin/tenants/{tenant_id}/model-usage` 增加 models 数组，按模型别名和能力汇总 UTC 当日调用数、成功/失败/pending 数及已知输入/输出 token 合计，同时返回 unknown_input_calls、unknown_output_calls。全部未知时合计为 null；部分未知时合计只是已知部分。页面调用账本同步展示汇总，明细分页仍包含历史记录。模型配置变更后相同别名合并统计，配置指纹仍可在明细接口核对；不是费用或模型版本对账报表。

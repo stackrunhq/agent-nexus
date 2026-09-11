@@ -1,5 +1,12 @@
 # 修改日志
 
+## 步骤 28：企业差异化模型调用限额（2026-09-11）
+
+- 0009 新增 tenant_model_quotas，共 18 表；企业每日模型调用覆盖值持久化，null 继承默认，0 暂停新调用。
+- 管理员 GET/PUT model-quota 与确认保存页面；修改和准入共用企业锁，保留既有用量，写企业审计事件，API/Worker 共用覆盖值。
+- PostgreSQL 全量 132 passed、前端 24 passed、Ruff、TypeScript/Vite、18 表恢复和独立 wheel 验证通过；未运行真实模型费用、Docker 容器或浏览器视觉验证。
+- 下一步 pgvector 扩容与检索基准；仅本地提交，不推送。
+
 ## 步骤 27：企业当日模型用量汇总（2026-09-11）
 
 - model-usage 增加按模型/能力分组的当日调用、成功/失败/pending、已知 token 合计及未知记录数，页面同步展示。
