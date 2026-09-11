@@ -11,6 +11,7 @@ from starlette.concurrency import run_in_threadpool
 from agent_nexus.core.errors import GatewayError
 from agent_nexus.storage.database import metadata
 from .vectors import VectorService, MAX_INDEX_CHUNKS
+from agent_nexus.tenants.quotas import policy
 
 jobs = metadata.tables["knowledge_index_jobs"]
 
@@ -35,6 +36,8 @@ class IndexJobs:
         limit = int(os.getenv("NEXUS_INDEX_DAILY_LIMIT", "100"))
         if not 1 <= limit <= 100000:
             raise ValueError("NEXUS_INDEX_DAILY_LIMIT must be 1..100000")
+        limits = policy(db, tenant)
+        limit = limits["effective_daily_limit"]
         used = db.execute(
             select(func.count())
             .select_from(jobs)
@@ -50,7 +53,7 @@ class IndexJobs:
             "daily_used": used,
             "reset_at": day_start + 86400,
             "active": active,
-            "active_limit": 5,
+            "active_limit": limits["effective_active_limit"],
         }
 
     def enqueue(self, tenant, app, version, model, actor, request_id, *, immediate=False):
@@ -70,7 +73,7 @@ class IndexJobs:
             now = int(time.time())
             usage = self._usage(db, tenant, now)
             if usage["active"] >= usage["active_limit"]:
-                raise GatewayError(429, "index_queue_full", "Tenant has five active index tasks")
+                raise GatewayError(429, "index_queue_full", "Tenant active index task limit reached")
             if usage["daily_used"] >= usage["daily_limit"]:
                 raise GatewayError(
                     429, "index_daily_quota_exceeded", "Tenant daily index quota exceeded"

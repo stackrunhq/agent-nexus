@@ -1,6 +1,7 @@
 """Platform administrator endpoints for tenant credentials and model grants."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from .quotas import QuotaPolicy, QuotaStore
 from .schemas import TenantCreate, TenantStatus
 
 
@@ -41,5 +42,15 @@ def tenant_router(get_store, admin_auth):
     @router.get("/{tenant_id}/events")
     def events(tenant_id: str):
         return {"data": get_store().events(tenant_id)}
+
+    @router.get("/{tenant_id}/index-quota")
+    def get_quota(tenant_id: str):
+        return QuotaStore(get_store().database).get(tenant_id)
+
+    @router.put("/{tenant_id}/index-quota")
+    def put_quota(tenant_id: str, body: QuotaPolicy, request: Request):
+        return QuotaStore(get_store().database).put(
+            tenant_id, body, request.state.actor, request.state.request_id
+        )
 
     return router

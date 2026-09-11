@@ -3,6 +3,7 @@ import {Alert, Button, Modal} from 'antd';
 import {AdminClient, ApiError} from '../../shared/client';
 import {SearchPanel} from './SearchPanel';
 import {AnswerPanel} from './AnswerPanel';
+import {QuotaPanel} from './QuotaPanel';
 
 interface Model {alias: string; enabled: boolean; capabilities: string[]; deployment: string}
 interface Index {status: 'ready' | 'stale'; dimensions: number; chunks: number}
@@ -14,6 +15,7 @@ export function VectorPanel({client, root}: {client: AdminClient; root: string})
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
   const [alias, setAlias] = useState('');
+  const [editQuota, setEditQuota] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     void Promise.all([
@@ -28,6 +30,8 @@ export function VectorPanel({client, root}: {client: AdminClient; root: string})
     return () => controller.abort();
   }, [client, root]);
   return <section aria-label="向量索引管理"><h4>模型选择与索引管理</h4>
+    <Button onClick={() => setEditQuota(value => !value)}>{editQuota ? '关闭限额设置' : '设置企业索引限额'}</Button>
+    {editQuota && <QuotaPanel client={client} root={root.split('/applications/')[0]}/>}
     {error && <Alert type="error" message={error}/>}
     <p>仅显示本企业已授权且启用的 embedding 模型。修改授权后请关闭并重新打开面板。</p>
     {loaded && !models.length && <p>没有可用模型，请在模型配置及企业授权中启用 embedding 模型。</p>}
@@ -78,7 +82,7 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
     <p aria-live="polite">{busy ? '正在处理…' : missing ? '尚未建立索引' : index ? `${index.status === 'ready' ? '索引可用' : '索引已失效，请重建'} · ${index.chunks} 个分片 · ${index.dimensions} 维` : '索引状态未确认'}</p>
     <Button disabled={busy} onClick={() => void run()}>刷新索引状态</Button>
     {usage && <p>今日索引任务 {usage.daily_used}/{usage.daily_limit} · 活跃任务 {usage.active}/{usage.active_limit} · 重置时间 {new Date(usage.reset_at * 1000).toLocaleString()}</p>}
-    <p>任务状态按需刷新；请启动索引 Worker。相同版本/模型的活跃任务复用，每企业最多 5 个活跃任务。</p>
+    <p>任务状态按需刷新；请启动索引 Worker。相同版本/模型的活跃任务复用，额度按当前企业配置执行。</p>
     {jobs.map(task => <p key={task.id}>任务 {task.id}：{({queued:'排队中',processing:'构建中',succeeded:'构建成功',failed:'构建失败'} as Record<string,string>)[task.status] || task.status} · 第 {task.attempts} 次处理{task.error ? ` · ${task.error}` : ''}</p>)}
     <Button disabled={busy} onClick={() => setConfirm(true)}>建立或重建索引</Button>
     {index?.status === 'ready' && <SearchPanel key={revision} client={client} root={`${root}/vector-search`} enabled={!busy} model={model.alias}/>}

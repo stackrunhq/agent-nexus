@@ -1,6 +1,6 @@
 # Agent Nexus
 
-后台索引已支持持久任务和独立 Worker；升级须迁移至 **0006**。见 [后台索引操作](docs/INDEX_JOBS.md)。
+后台索引已支持持久任务和独立 Worker；升级须迁移至 **0007**。见 [后台索引操作](docs/INDEX_JOBS.md)。
 
 面向企业应用的知识库、使用指导与流程规划中台，按阶段实现。
 
@@ -165,3 +165,5 @@ npm --prefix web test
 0005 新增小规模持久化向量索引与向量检索 API，支持企业已授权的云端/本地 embedding 模型，详见 [向量检索](docs/VECTOR_SEARCH.md)。关键词页面仍独立，混合检索与大模型引用问答未实现。
 
 本轮已接通模型选择与索引管理、混合检索和单轮引用问答，见 [操作与接口](docs/ANSWERS.md)。
+
+当前数据库为 0007，新增 tenant_index_quotas，共 16 张业务表；升级前停止 API 与 Worker 并备份。企业差异化限额通过 index-quota 管理接口配置。

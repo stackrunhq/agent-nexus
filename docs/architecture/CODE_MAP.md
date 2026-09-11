@@ -83,6 +83,9 @@ agent-nexus/
 
 ### 混合检索与引用问答
 
+- `api/src/agent_nexus/tenants/quotas.py`：企业覆盖限额、默认继承、修改审计；`storage/quota_schema.py` 与 0007 迁移定义表。
+- `web/src/app/features/knowledge/QuotaPanel.tsx`：企业限额读取、确认修改和恢复继承。
+
 - `api/src/agent_nexus/knowledge/index_jobs.py`：索引入队、容量、租约领取和写入隔离。
 - `api/src/agent_nexus/storage/index_job_schema.py` / `0006_index_jobs.py`：持久任务表与迁移。
 - `cli/src/agent_nexus_cli/worker.py --queue indexes`：独立索引 Worker。

@@ -28,3 +28,5 @@
 代码入口：`api/src/agent_nexus/knowledge/answers.py` 实现融合和问答，`vector_router.py` 提供路由；`web/src/app/features/knowledge/VectorPanel.tsx` 管理模型与索引，`AnswerPanel.tsx` 展示引用问答。
 
 更新：页面建立索引已切换至持久化后台任务；原同步 vector-index API 保留兼容。任务接口、租约和容量限制见 [索引任务](INDEX_JOBS.md)。
+
+当前数据库为 0007，新增 tenant_index_quotas，共 16 张业务表；升级前停止 API 与 Worker 并备份。企业差异化限额通过 index-quota 管理接口配置。

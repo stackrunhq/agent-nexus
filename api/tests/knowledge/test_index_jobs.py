@@ -25,7 +25,7 @@ def test_0005_requires_upgrade(tmp_path):
         Database(path)
     upgrade(path)
     database = Database(path)
-    assert database.check()["revision"] == "0006"
+    assert database.check()["revision"] == "0007"
     database.close()
 
 

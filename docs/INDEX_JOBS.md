@@ -30,3 +30,5 @@ python -m agent_nexus_cli.worker --queue indexes
 原同步 `POST /vector-index` 保留响应兼容，现已共用任务登记、活跃数限制和每日准入额度，见 [索引构建配额](INDEX_QUOTAS.md)。这不是企业 token/费用配额。当前没有进度百分比、取消任务、历史清理、优先级或租户公平调度；失效索引仍须明确重建。
 
 代码：`knowledge/index_jobs.py` 负责入队/领取/执行/租约；`storage/index_job_schema.py` 与冻结 0006 迁移定义表；`cli/…/worker.py --queue indexes` 运行独立消费循环。
+
+当前数据库为 0007，新增 tenant_index_quotas，共 16 张业务表；升级前停止 API 与 Worker 并备份。企业差异化限额通过 index-quota 管理接口配置。
