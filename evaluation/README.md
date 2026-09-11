@@ -1,5 +1,7 @@
 # 手册与模型评测
 
+原生向量层基准使用 `python -m agent_nexus_cli.vector_benchmark`，不是模型问答质量评测；部署和复现说明见 [pgvector](../docs/PGVECTOR.md)，本轮原始结果位于 results/。
+
 本目录放可版本化的问题与预期来源；企业原文件、凭据及包含敏感内容的结果不提交 Git。
 
 第一组基准使用本项目真实操作文档 `docs/ANSWERS.md` 和 `docs/VECTOR_SEARCH.md`，不是虚构企业手册。将这两个 Markdown 文件上传至测试企业的同一产品版本，解析后发布版本与文档，并为测试企业授权 embedding 模型、建立索引。企业手册可按相同结构另建 cases 文件。

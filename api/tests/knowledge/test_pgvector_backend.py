@@ -6,6 +6,7 @@ from sqlalchemy import text
 from agent_nexus.core.errors import GatewayError
 from agent_nexus.knowledge import pgvector_backend as backend
 from agent_nexus.storage.database import Database
+from test_ingestion import scope as scope
 
 
 def test_backend_explicit_opt_in_and_sqlite_rejection(tmp_path, monkeypatch):
@@ -57,3 +58,73 @@ def test_native_exact_ranking_scope_and_rebuild():
                 {"version": version},
             )
         database.close()
+
+
+@pytest.mark.skipif(
+    not os.getenv("NEXUS_TEST_PGVECTOR_URL"), reason="Requires dedicated pgvector test database"
+)
+def test_native_api_matches_portable_and_honors_withdrawal(scope, monkeypatch):
+    import httpx
+    from fastapi.testclient import TestClient
+    from sqlalchemy import create_engine
+    from sqlalchemy.engine import make_url
+    from agent_nexus.app import Settings, create_app
+    from agent_nexus_cli.database import upgrade, import_sqlite
+    from test_index_jobs import prepare
+    from test_ingestion import ADMIN
+    from test_vectors import provider
+
+    monkeypatch.setenv("NEXUS_VECTOR_BACKEND", "portable")
+    _, alias = prepare(scope)
+    _, tenants, app, version, root, source = scope
+    admin_url = make_url(os.environ["NEXUS_TEST_PGVECTOR_URL"])
+    database_name = "nexus_native_" + uuid4().hex
+    owner = create_engine(admin_url, isolation_level="AUTOCOMMIT")
+    target = admin_url.set(database=database_name).render_as_string(hide_password=False)
+    with owner.connect() as db:
+        db.execute(text("CREATE DATABASE " + database_name))
+    try:
+        upgrade(target)
+        database = Database(target)
+        try:
+            backend.setup(database)
+        finally:
+            database.close()
+        import_sqlite(source, target)
+        monkeypatch.setenv("NEXUS_VECTOR_BACKEND", "pgvector")
+        with TestClient(
+            create_app(
+                Settings("a" * 32, "b" * 32, target, {"localhost"}, "tenant"),
+                httpx.MockTransport(provider),
+            )
+        ) as client:
+            built = client.post(root + "/vector-index", headers=ADMIN, json={"model": alias})
+            assert built.status_code == 200, built.text
+            public = f"/api/v1/applications/{app['id']}/versions/{version['id']}/vector-search"
+            member = {"Authorization": "Bearer " + tenants[0]["api_key"]}
+            body = {"model": alias, "query": "password"}
+            native = client.post(public, headers=member, json=body)
+            assert native.status_code == 200, native.text
+            assert native.json()["method"] == "pgvector_cosine"
+            monkeypatch.setenv("NEXUS_VECTOR_BACKEND", "portable")
+            portable = client.post(public, headers=member, json=body).json()
+            assert [(r["document_id"], r["chunk_index"]) for r in native.json()["data"]] == [
+                (r["document_id"], r["chunk_index"]) for r in portable["data"]
+            ]
+            monkeypatch.setenv("NEXUS_VECTOR_BACKEND", "pgvector")
+            assert (
+                client.post(
+                    public, headers={"Authorization": "Bearer " + tenants[1]["api_key"]}, json=body
+                ).status_code
+                == 404
+            )
+            document = native.json()["data"][0]["document_id"]
+            client.patch(root + "/documents/" + document, headers=ADMIN, json={"published": False})
+            assert (
+                client.post(public, headers=member, json=body).json()["error"]["code"]
+                == "index_stale"
+            )
+    finally:
+        with owner.connect() as db:
+            db.execute(text("DROP DATABASE " + database_name + " WITH (FORCE)"))
+        owner.dispose()

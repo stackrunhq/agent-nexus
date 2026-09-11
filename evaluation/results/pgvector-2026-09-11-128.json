@@ -1,0 +1,15 @@
+{
+  "postgres_version": "17.11",
+  "pgvector_version": "0.8.6",
+  "count": 128,
+  "dimensions": 64,
+  "rounds": 10,
+  "seed": 42,
+  "top_k": 10,
+  "mean_top_k_overlap": 1.0,
+  "max_score_error": 4.348694201961045e-08,
+  "build_seconds": 0.01798970001982525,
+  "median_query_ms": 2.454249988659285,
+  "p95_query_ms": 3.2150000042747706,
+  "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+}
