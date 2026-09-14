@@ -142,3 +142,8 @@ agent-nexus/
 - `cli/src/agent_nexus_cli/postgres_pipeline.py`：隔离数据库生命周期、RSS/工作集采样和 pgvector 管线运行。
 - `cli/src/agent_nexus_cli/pipeline_benchmark.py`：复用场景及四请求额度竞争。
 - `api/tests/storage/test_benchmark_database_cleanup.py`：创建失败和场景异常时的清理边界。
+# 步骤 39 导航
+
+- `cli/src/agent_nexus_cli/pipeline_concurrency.py`：独立管线进程编排、清理和分组内存采样。
+- `cli/src/agent_nexus_cli/process_tree.py`：Windows/Linux 父 PID 枚举与后代集合。
+- `api/tests/storage/test_process_memory.py`：进程分组及本机 RSS 验证。

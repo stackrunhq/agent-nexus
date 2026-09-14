@@ -1,0 +1,389 @@
+{
+  "scope": "2/4 successful isolated 128-chunk pipelines, mocked models; separate databases",
+  "memory_scope": "sampled sum of working sets/RSS per process group, shared pages double counted; not physical unique memory",
+  "sampling": "20ms sleep plus enumeration cost; exits may be missed; group peaks are not simultaneous",
+  "scenarios": [
+    {
+      "workers": 2,
+      "wall_seconds": 2.630665200005751,
+      "sampled_peak_sum_rss_bytes": {
+        "pipelines": 213311488,
+        "parser_descendants": 34304000,
+        "postgres_tree": 278380544
+      },
+      "samples": 69,
+      "unreadable_or_exited_process_samples": 2,
+      "observed_parser_processes": 4,
+      "results": [
+        {
+          "chunks": 128,
+          "characters": 108950,
+          "dimensions": 64,
+          "rounds": 3,
+          "timings": {
+            "upload_ms": 10.851200029719621,
+            "parse_worker_ms": 191.2055999855511,
+            "build_worker_ms": 113.44520002603531,
+            "interrupted_attempt_ms": 19.493100000545382,
+            "resume_worker_ms": 89.6608000039123,
+            "search": {
+              "samples_ms": [
+                7.4348000343889,
+                6.282699992880225,
+                6.611299992073327
+              ],
+              "median_ms": 6.611299992073327,
+              "p95_ms": 7.4348000343889
+            },
+            "vector-search": {
+              "samples_ms": [
+                18.85809999657795,
+                18.299100047443062,
+                18.112100020516664
+              ],
+              "median_ms": 18.299100047443062,
+              "p95_ms": 18.85809999657795
+            },
+            "hybrid-search": {
+              "samples_ms": [
+                31.179599987808615,
+                31.09910001512617,
+                30.84099997067824
+              ],
+              "median_ms": 31.09910001512617,
+              "p95_ms": 31.179599987808615
+            },
+            "answers": {
+              "samples_ms": [
+                43.888900021556765,
+                46.75630002748221,
+                46.05550004635006
+              ],
+              "median_ms": 46.05550004635006,
+              "p95_ms": 46.75630002748221
+            }
+          },
+          "initial_embedding_calls": 8,
+          "resumed_embedding_calls": 7,
+          "reused_chunks": 16,
+          "concurrent_quota_statuses": [
+            200,
+            429,
+            429,
+            429
+          ],
+          "quota_blocks_before_model": true
+        },
+        {
+          "chunks": 128,
+          "characters": 108950,
+          "dimensions": 64,
+          "rounds": 3,
+          "timings": {
+            "upload_ms": 8.803399978205562,
+            "parse_worker_ms": 198.07959999889135,
+            "build_worker_ms": 106.77309997845441,
+            "interrupted_attempt_ms": 18.96449999185279,
+            "resume_worker_ms": 88.38140004081652,
+            "search": {
+              "samples_ms": [
+                8.182000019587576,
+                6.783899967558682,
+                6.980300007853657
+              ],
+              "median_ms": 6.980300007853657,
+              "p95_ms": 8.182000019587576
+            },
+            "vector-search": {
+              "samples_ms": [
+                19.946000014897436,
+                18.844000005628914,
+                18.03099998505786
+              ],
+              "median_ms": 18.844000005628914,
+              "p95_ms": 19.946000014897436
+            },
+            "hybrid-search": {
+              "samples_ms": [
+                34.93900003377348,
+                32.84410003107041,
+                31.646599993109703
+              ],
+              "median_ms": 32.84410003107041,
+              "p95_ms": 34.93900003377348
+            },
+            "answers": {
+              "samples_ms": [
+                42.86390001652762,
+                45.80410005291924,
+                46.275800035800785
+              ],
+              "median_ms": 45.80410005291924,
+              "p95_ms": 46.275800035800785
+            }
+          },
+          "initial_embedding_calls": 8,
+          "resumed_embedding_calls": 7,
+          "reused_chunks": 16,
+          "concurrent_quota_statuses": [
+            200,
+            429,
+            429,
+            429
+          ],
+          "quota_blocks_before_model": true
+        }
+      ]
+    },
+    {
+      "workers": 4,
+      "wall_seconds": 2.7134387000114657,
+      "sampled_peak_sum_rss_bytes": {
+        "pipelines": 426496000,
+        "parser_descendants": 70262784,
+        "postgres_tree": 427343872
+      },
+      "samples": 51,
+      "unreadable_or_exited_process_samples": 2,
+      "observed_parser_processes": 8,
+      "results": [
+        {
+          "chunks": 128,
+          "characters": 108950,
+          "dimensions": 64,
+          "rounds": 3,
+          "timings": {
+            "upload_ms": 9.824599954299629,
+            "parse_worker_ms": 194.23610001103953,
+            "build_worker_ms": 115.5373000074178,
+            "interrupted_attempt_ms": 21.099100005812943,
+            "resume_worker_ms": 95.58830002788454,
+            "search": {
+              "samples_ms": [
+                7.972599996719509,
+                6.812300009187311,
+                6.626599992159754
+              ],
+              "median_ms": 6.812300009187311,
+              "p95_ms": 7.972599996719509
+            },
+            "vector-search": {
+              "samples_ms": [
+                20.49329999135807,
+                19.06550000421703,
+                18.588899984024465
+              ],
+              "median_ms": 19.06550000421703,
+              "p95_ms": 20.49329999135807
+            },
+            "hybrid-search": {
+              "samples_ms": [
+                36.18489997461438,
+                36.11970000201836,
+                35.99980002036318
+              ],
+              "median_ms": 36.11970000201836,
+              "p95_ms": 36.18489997461438
+            },
+            "answers": {
+              "samples_ms": [
+                45.553899952210486,
+                44.4790999754332,
+                44.459400000050664
+              ],
+              "median_ms": 44.4790999754332,
+              "p95_ms": 45.553899952210486
+            }
+          },
+          "initial_embedding_calls": 8,
+          "resumed_embedding_calls": 7,
+          "reused_chunks": 16,
+          "concurrent_quota_statuses": [
+            200,
+            429,
+            429,
+            429
+          ],
+          "quota_blocks_before_model": true
+        },
+        {
+          "chunks": 128,
+          "characters": 108950,
+          "dimensions": 64,
+          "rounds": 3,
+          "timings": {
+            "upload_ms": 10.383799963165075,
+            "parse_worker_ms": 195.96039998577908,
+            "build_worker_ms": 116.82270001620054,
+            "interrupted_attempt_ms": 20.42389998678118,
+            "resume_worker_ms": 91.2868999876082,
+            "search": {
+              "samples_ms": [
+                7.543399988207966,
+                6.91019999794662,
+                6.802199990488589
+              ],
+              "median_ms": 6.91019999794662,
+              "p95_ms": 7.543399988207966
+            },
+            "vector-search": {
+              "samples_ms": [
+                19.30829999037087,
+                18.505799991544336,
+                18.859800009522587
+              ],
+              "median_ms": 18.859800009522587,
+              "p95_ms": 19.30829999037087
+            },
+            "hybrid-search": {
+              "samples_ms": [
+                33.613899955525994,
+                35.75400001136586,
+                33.32099999533966
+              ],
+              "median_ms": 33.613899955525994,
+              "p95_ms": 35.75400001136586
+            },
+            "answers": {
+              "samples_ms": [
+                48.053700011223555,
+                50.275899993721396,
+                49.75649999687448
+              ],
+              "median_ms": 49.75649999687448,
+              "p95_ms": 50.275899993721396
+            }
+          },
+          "initial_embedding_calls": 8,
+          "resumed_embedding_calls": 7,
+          "reused_chunks": 16,
+          "concurrent_quota_statuses": [
+            200,
+            429,
+            429,
+            429
+          ],
+          "quota_blocks_before_model": true
+        },
+        {
+          "chunks": 128,
+          "characters": 108950,
+          "dimensions": 64,
+          "rounds": 3,
+          "timings": {
+            "upload_ms": 10.017700027674437,
+            "parse_worker_ms": 195.06210001418367,
+            "build_worker_ms": 115.25010003242642,
+            "interrupted_attempt_ms": 19.13909998256713,
+            "resume_worker_ms": 90.58229997754097,
+            "search": {
+              "samples_ms": [
+                8.928100054617971,
+                8.129100024234504,
+                7.057600014377385
+              ],
+              "median_ms": 8.129100024234504,
+              "p95_ms": 8.928100054617971
+            },
+            "vector-search": {
+              "samples_ms": [
+                21.288499992806464,
+                19.02649999829009,
+                20.69830003893003
+              ],
+              "median_ms": 20.69830003893003,
+              "p95_ms": 21.288499992806464
+            },
+            "hybrid-search": {
+              "samples_ms": [
+                33.41589996125549,
+                33.74069998972118,
+                36.67540004244074
+              ],
+              "median_ms": 33.74069998972118,
+              "p95_ms": 36.67540004244074
+            },
+            "answers": {
+              "samples_ms": [
+                47.94650000985712,
+                52.328000019770116,
+                48.945399990770966
+              ],
+              "median_ms": 48.945399990770966,
+              "p95_ms": 52.328000019770116
+            }
+          },
+          "initial_embedding_calls": 8,
+          "resumed_embedding_calls": 7,
+          "reused_chunks": 16,
+          "concurrent_quota_statuses": [
+            200,
+            429,
+            429,
+            429
+          ],
+          "quota_blocks_before_model": true
+        },
+        {
+          "chunks": 128,
+          "characters": 108950,
+          "dimensions": 64,
+          "rounds": 3,
+          "timings": {
+            "upload_ms": 10.003000032156706,
+            "parse_worker_ms": 190.9698999952525,
+            "build_worker_ms": 115.14469998655841,
+            "interrupted_attempt_ms": 19.362000050023198,
+            "resume_worker_ms": 90.00820002984256,
+            "search": {
+              "samples_ms": [
+                9.005700005218387,
+                7.189100026153028,
+                7.078599999658763
+              ],
+              "median_ms": 7.189100026153028,
+              "p95_ms": 9.005700005218387
+            },
+            "vector-search": {
+              "samples_ms": [
+                21.521399961784482,
+                18.855299975257367,
+                20.823600003495812
+              ],
+              "median_ms": 20.823600003495812,
+              "p95_ms": 21.521399961784482
+            },
+            "hybrid-search": {
+              "samples_ms": [
+                33.46319997217506,
+                33.65320002194494,
+                36.72099998220801
+              ],
+              "median_ms": 33.65320002194494,
+              "p95_ms": 36.72099998220801
+            },
+            "answers": {
+              "samples_ms": [
+                48.099500010721385,
+                52.214100025594234,
+                49.06289995415136
+              ],
+              "median_ms": 49.06289995415136,
+              "p95_ms": 52.214100025594234
+            }
+          },
+          "initial_embedding_calls": 8,
+          "resumed_embedding_calls": 7,
+          "reused_chunks": 16,
+          "concurrent_quota_statuses": [
+            200,
+            429,
+            429,
+            429
+          ],
+          "quota_blocks_before_model": true
+        }
+      ]
+    }
+  ]
+}

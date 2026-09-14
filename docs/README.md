@@ -1,5 +1,7 @@
 # 文档导航
 
+- [多管线与进程树内存](PIPELINE_CONCURRENCY.md)：2/4 并发完整场景、进程分组和实测范围。
+
 - [PostgreSQL 完整管线基准](POSTGRES_PIPELINE.md)：隔离数据库、并发准入和进程工作集采样。
 
 - [pgvector 并发与内存基准](VECTOR_CONCURRENCY.md)：运行命令、六组实测及 Python 内存范围。

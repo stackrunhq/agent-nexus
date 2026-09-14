@@ -16,7 +16,8 @@ from sqlalchemy.engine import make_url
 from agent_nexus_cli.pipeline_benchmark import scenario
 
 
-def rss_bytes():
+def rss_bytes(pid=None):
+    pid = os.getpid() if pid is None else pid
     if os.name == "nt":
         from ctypes import wintypes
 
@@ -45,11 +46,20 @@ def rss_bytes():
         ]
         data = Counters()
         data.cb = ctypes.sizeof(data)
-        if not psapi.GetProcessMemoryInfo(kernel.GetCurrentProcess(), ctypes.byref(data), data.cb):
-            raise OSError(ctypes.get_last_error(), "Cannot sample process working set")
+        kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel.OpenProcess.restype = wintypes.HANDLE
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        handle = kernel.OpenProcess(0x410, False, pid)
+        if not handle:
+            raise OSError(ctypes.get_last_error(), "Cannot open sampled process")
+        try:
+            if not psapi.GetProcessMemoryInfo(handle, ctypes.byref(data), data.cb):
+                raise OSError(ctypes.get_last_error(), "Cannot sample process working set")
+        finally:
+            kernel.CloseHandle(handle)
         return data.working
     if platform.system() == "Linux":
-        return int(Path("/proc/self/statm").read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE")
+        return int(Path(f"/proc/{pid}/statm").read_text().split()[1]) * os.sysconf("SC_PAGE_SIZE")
     raise RuntimeError("RSS sampler supports Windows and Linux")
 
 
