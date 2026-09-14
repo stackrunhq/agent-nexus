@@ -82,3 +82,6 @@ API/协议使用自动化测试，详细结果见 VALIDATION.md。真实模型�
 # 步骤 36：当前状态
 
 已建立并执行临时 SQLite 软件管线基准，16/64/128 分片通过构建、首批恢复、检索问答和配额检查；129 分片正确拒绝。模拟模型、无并发，保持上限。下一步隔离 PostgreSQL/pgvector 并发与资源测试。见 [基准说明](PIPELINE_BENCHMARK.md)。
+# 步骤 37：当前状态
+
+已完成原生 pgvector 1/2/4 线程、128/1024 行基准与 Python 分配峰值记录，精确检索结果一致。尚非 PostgreSQL 完整管线/RSS 测试，业务上限仍 128。下一步完整 API/Worker 接入隔离 PostgreSQL 基准。见 [并发基准](VECTOR_CONCURRENCY.md)。

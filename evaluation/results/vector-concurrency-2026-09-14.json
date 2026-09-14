@@ -1,0 +1,273 @@
+{
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "scope": "native cache only; no API, model, document parser or recovery",
+  "memory_scope": "tracemalloc Python allocations across all threads; excludes PostgreSQL and most native allocations",
+  "timing_scope": "tracing enabled; includes client connection overhead; not comparable to uninstrumented latency",
+  "scenarios": [
+    {
+      "workers": 1,
+      "count_per_worker": 128,
+      "rounds_per_worker": 10,
+      "elapsed_seconds_including_build_reference_and_cleanup": 0.26432369998656213,
+      "python_traced_peak_bytes": 1038603,
+      "results": [
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 128,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 42,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 4.348694201961045e-08,
+          "build_seconds": 0.0322489999816753,
+          "median_query_ms": 6.56929996330291,
+          "p95_query_ms": 8.53099999949336,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        }
+      ]
+    },
+    {
+      "workers": 2,
+      "count_per_worker": 128,
+      "rounds_per_worker": 10,
+      "elapsed_seconds_including_build_reference_and_cleanup": 0.23371569998562336,
+      "python_traced_peak_bytes": 1559816,
+      "results": [
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 128,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 42,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 4.348694201961045e-08,
+          "build_seconds": 0.0645051000174135,
+          "median_query_ms": 7.334199995966628,
+          "p95_query_ms": 18.899100017733872,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        },
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 128,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 43,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 3.751324845202575e-08,
+          "build_seconds": 0.023168899992015213,
+          "median_query_ms": 10.725950007326901,
+          "p95_query_ms": 24.182100023608655,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        }
+      ]
+    },
+    {
+      "workers": 4,
+      "count_per_worker": 128,
+      "rounds_per_worker": 10,
+      "elapsed_seconds_including_build_reference_and_cleanup": 0.4685372000094503,
+      "python_traced_peak_bytes": 2844316,
+      "results": [
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 128,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 42,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 4.348694201961045e-08,
+          "build_seconds": 0.07022880000295117,
+          "median_query_ms": 21.874250000109896,
+          "p95_query_ms": 38.303099980112165,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        },
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 128,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 43,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 3.751324845202575e-08,
+          "build_seconds": 0.10889360000146553,
+          "median_query_ms": 14.426849986193702,
+          "p95_query_ms": 39.61390000768006,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        },
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 128,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 44,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 3.481679339278898e-08,
+          "build_seconds": 0.15112340002087876,
+          "median_query_ms": 6.658799975411966,
+          "p95_query_ms": 7.567599997855723,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        },
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 128,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 45,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 3.631680040028229e-08,
+          "build_seconds": 0.07707180001307279,
+          "median_query_ms": 18.43185003963299,
+          "p95_query_ms": 36.375699972268194,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        }
+      ]
+    },
+    {
+      "workers": 1,
+      "count_per_worker": 1024,
+      "rounds_per_worker": 10,
+      "elapsed_seconds_including_build_reference_and_cleanup": 0.860030599986203,
+      "python_traced_peak_bytes": 7401861,
+      "results": [
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 1024,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 42,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 4.194363045773031e-08,
+          "build_seconds": 0.17491300002438948,
+          "median_query_ms": 45.12834997149184,
+          "p95_query_ms": 45.749899989459664,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        }
+      ]
+    },
+    {
+      "workers": 2,
+      "count_per_worker": 1024,
+      "rounds_per_worker": 10,
+      "elapsed_seconds_including_build_reference_and_cleanup": 2.646883799985517,
+      "python_traced_peak_bytes": 13857773,
+      "results": [
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 1024,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 42,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 4.194363045773031e-08,
+          "build_seconds": 0.37571619998198,
+          "median_query_ms": 145.1973000075668,
+          "p95_query_ms": 233.69179997825995,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        },
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 1024,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 43,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 4.772839323763378e-08,
+          "build_seconds": 0.36417179997079074,
+          "median_query_ms": 156.88125000451691,
+          "p95_query_ms": 214.17530003236607,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        }
+      ]
+    },
+    {
+      "workers": 4,
+      "count_per_worker": 1024,
+      "rounds_per_worker": 10,
+      "elapsed_seconds_including_build_reference_and_cleanup": 7.540108399989549,
+      "python_traced_peak_bytes": 26634696,
+      "results": [
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 1024,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 42,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 4.194363045773031e-08,
+          "build_seconds": 2.0003293000045232,
+          "median_query_ms": 384.10804999875836,
+          "p95_query_ms": 551.7412000335753,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        },
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 1024,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 43,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 4.772839323763378e-08,
+          "build_seconds": 1.785665399977006,
+          "median_query_ms": 304.84440000145696,
+          "p95_query_ms": 600.6960999802686,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        },
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 1024,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 44,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 5.00567458594503e-08,
+          "build_seconds": 2.955037999956403,
+          "median_query_ms": 379.097199998796,
+          "p95_query_ms": 468.8664000132121,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        },
+        {
+          "postgres_version": "17.11",
+          "pgvector_version": "0.8.6",
+          "count": 1024,
+          "dimensions": 64,
+          "rounds": 10,
+          "seed": 45,
+          "top_k": 10,
+          "mean_top_k_overlap": 1.0,
+          "max_score_error": 3.7541089070725064e-08,
+          "build_seconds": 1.818971100030467,
+          "median_query_ms": 337.17579997028224,
+          "p95_query_ms": 487.90619999635965,
+          "scope": "Synthetic native cache only; not end-to-end capacity or model quality."
+        }
+      ]
+    }
+  ]
+}

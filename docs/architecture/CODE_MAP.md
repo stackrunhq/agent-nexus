@@ -133,3 +133,7 @@ agent-nexus/
 
 - `cli/src/agent_nexus_cli/pipeline_benchmark.py`：临时数据库、API/Worker 基准、中断恢复注入与结果输出。
 - `evaluation/results/pipeline-2026-09-14.json`：本机原始采样；`docs/PIPELINE_BENCHMARK.md`：命令、数据解释和边界。
+# 步骤 37 导航
+
+- `cli/src/agent_nexus_cli/vector_concurrency.py`：原生并发与 Python 分配测量，复用 `vector_benchmark.py` 的参考比较和清理。
+- `evaluation/results/vector-concurrency-2026-09-14.json`：六组原始结果；`docs/VECTOR_CONCURRENCY.md`：执行与解释。

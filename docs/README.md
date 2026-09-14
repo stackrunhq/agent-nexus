@@ -1,5 +1,7 @@
 # 文档导航
 
+- [pgvector 并发与内存基准](VECTOR_CONCURRENCY.md)：运行命令、六组实测及 Python 内存范围。
+
 - [软件管线容量基准](PIPELINE_BENCHMARK.md)：运行命令、实测结果、中断注入及适用边界。
 
 - [索引进度与升级](INDEX_PROGRESS.md)：0012、内容修订计数、独立批次存储及旧进度处理。
