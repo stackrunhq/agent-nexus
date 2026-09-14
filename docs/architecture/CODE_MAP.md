@@ -109,3 +109,7 @@ agent-nexus/
 - `web/src/app/features/knowledge/AnswerPanel.tsx`：聊天模型选择、问题提交和原文引用展示。
 
 索引配额：knowledge/index_jobs.py 在任务登记事务内检查企业日用量与活跃数；vector_router.py 提供 index-usage 并将同步构建接入同一登记逻辑。
+# 步骤 32 导航
+
+- `api/src/agent_nexus/knowledge/vectors.py`：流式内容指纹、批次间内容和授权校验、最终索引原子保存。
+- `api/tests/knowledge/test_vector_batches.py`：多批次成功、批次间失效及旧索引保留回归。

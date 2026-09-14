@@ -35,7 +35,11 @@ class VectorSearchRequest(IndexRequest):
 
 
 def fingerprint(rows):
-    return hashlib.sha256(json.dumps(rows, sort_keys=True, ensure_ascii=True).encode()).hexdigest()
+    # Preserve the existing JSON byte format so persisted indexes remain valid.
+    digest = hashlib.sha256()
+    for part in json.JSONEncoder(sort_keys=True, ensure_ascii=True).iterencode(rows):
+        digest.update(part.encode())
+    return digest.hexdigest()
 
 
 def unit(vector):
@@ -144,6 +148,17 @@ class VectorService:
         try:
             async with asyncio.timeout(120):
                 for start in range(0, len(rows), 16):
+                    if start:
+                        # Stop subsequent upstream calls when content or permissions change.
+                        await run_in_threadpool(
+                            self.validate_snapshot,
+                            tenant,
+                            app,
+                            version,
+                            model,
+                            content_hash,
+                            model_hash,
+                        )
                     batch = rows[start : start + 16]
                     request = EmbeddingRequest(model=model, input=[row["text"] for row in batch])
                     result = await self.gateway.embed_config(
