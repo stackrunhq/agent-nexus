@@ -41,3 +41,6 @@ NEXUS_MODEL_DAILY_LIMIT 默认每企业每日 1000 次模型调用；API 与 ind
 # 当前升级要求：0011
 
 停止 API 和全部 Worker、完成备份后执行数据库升级，再启动服务；运行角色需 knowledge_index_checkpoints 读写权限。后台索引中断恢复说明见 [索引检查点](../docs/INDEX_CHECKPOINTS.md)。当前 20 张业务表，以下历史版本说明请按此版本升级。
+# 当前升级要求：0012
+
+备份并停止 API 和全部 Worker 后升级至 0012，再启动服务。新表需要运行账号读写权限，共 22 张业务表。旧格式未完成检查点将被清除；旧任务恢复时从头构建一次，已完成索引保留。见 [升级说明](../docs/INDEX_PROGRESS.md)。以下为历史记录。

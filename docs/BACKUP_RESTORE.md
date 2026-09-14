@@ -1,5 +1,9 @@
 # PostgreSQL 实库与备份恢复演练
 
+## 0012 内容修订与独立批次（2026-09-14）
+
+当前 22 张业务表，备份必须包含 knowledge_content_revisions、knowledge_index_batches；运行角色需新表读写权限。0012 迁移清除旧格式未完成检查点，保留任务和已完成索引；旧任务恢复时可能再次调用模型。见 [索引进度与升级](INDEX_PROGRESS.md)。
+
 ## 0011 索引检查点（2026-09-14）
 
 当前 20 张业务表，备份恢复必须包含 knowledge_index_checkpoints；运行角色需该表读写权限。恢复的 processing 任务租约到期后可重新领取并校验检查点；已返回但未持久化的模型批次可能重复调用。操作见 [索引检查点](INDEX_CHECKPOINTS.md)。

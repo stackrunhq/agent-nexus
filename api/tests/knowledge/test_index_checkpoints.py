@@ -6,7 +6,7 @@ import httpx
 import pytest
 
 from agent_nexus.core.errors import GatewayError
-from agent_nexus.knowledge.index_checkpoints import IndexCheckpoint, checkpoints
+from agent_nexus.knowledge.index_checkpoints import IndexCheckpoint, checkpoints, batches
 from agent_nexus.knowledge.index_jobs import IndexJobs, jobs, run_once
 from agent_nexus.knowledge.jobs import run_once as parse_once
 from agent_nexus.knowledge.vectors import indexes
@@ -43,8 +43,8 @@ def test_interrupted_worker_resumes_only_matching_revision(scope, monkeypatch, c
     task = client.post(root + "/index-jobs", headers=ADMIN, json={"model": model.alias}).json()
     save = IndexCheckpoint.save
 
-    def interrupted(self, *args):
-        save(self, *args)
+    def interrupted(self, *args, **kwargs):
+        save(self, *args, **kwargs)
         raise asyncio.CancelledError()
 
     monkeypatch.setattr(IndexCheckpoint, "save", interrupted)
@@ -52,7 +52,7 @@ def test_interrupted_worker_resumes_only_matching_revision(scope, monkeypatch, c
         asyncio.run(run_once(database, client.app.state.gateway))
     assert calls == [16]
     with database.read() as db:
-        saved = dict(db.execute(checkpoints.select()).mappings().one())
+        saved = dict(db.execute(batches.select()).mappings().one())
         assert len(json.loads(saved["payload"])) == 16
         assert dict(db.execute(indexes.select()).mappings().one()) == old
     monkeypatch.setattr(IndexCheckpoint, "save", save)
@@ -108,5 +108,5 @@ def test_0010_requires_explicit_upgrade(tmp_path):
         Database(path)
     upgrade(path)
     database = Database(path)
-    assert database.check()["revision"] == "0011"
+    assert database.check()["revision"] == "0012"
     database.close()

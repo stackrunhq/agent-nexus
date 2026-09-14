@@ -88,3 +88,6 @@ SQLite 回归、导入校验和回滚已自动测试。PostgreSQL 集成测试�
 # 当前数据库：0011
 
 新增 knowledge_index_checkpoints，共 20 张业务表。旧部署先备份、停止 API 和全部 Worker，再显式升级。检查点按任务隔离，不改变已有索引；详见 [索引检查点](INDEX_CHECKPOINTS.md)。以下保留历史迁移说明。
+# 当前数据库：0012
+
+新增 knowledge_content_revisions 和 knowledge_index_batches，共 22 张业务表。升级会清除旧格式未完成检查点，保留任务及已完成索引。先备份并停止所有写入进程，迁移后再启动。详见 [索引进度](INDEX_PROGRESS.md)。以下为历史迁移说明。

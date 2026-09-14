@@ -10,6 +10,7 @@ from sqlalchemy import select
 from agent_nexus.applications.store import ApplicationStore
 from agent_nexus.core.errors import GatewayError
 from agent_nexus.storage.database import metadata, run
+from .content_revisions import bump
 
 documents = metadata.tables["knowledge_documents"]
 chunks = metadata.tables["knowledge_chunks"]
@@ -144,6 +145,7 @@ class KnowledgeStore:
                     409, "document_not_ready", "Parse the document before publication"
                 )
             if current["published"] != published:
+                bump(db, version_id)
                 db.execute(
                     documents.update()
                     .where(documents.c.id == document_id)
@@ -229,6 +231,10 @@ class KnowledgeStore:
             if not row:
                 return False  # A replacement worker owns this task; discard stale results.
             if error is None:
+                version_id = db.execute(
+                    select(documents.c.version_id).where(documents.c.id == document_id)
+                ).scalar_one()
+                bump(db, version_id)
                 rows = [
                     {
                         "document_id": document_id,

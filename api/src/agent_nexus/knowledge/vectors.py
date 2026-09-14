@@ -18,6 +18,8 @@ from agent_nexus.storage.database import metadata
 from agent_nexus.tenants.store import TenantStore
 from .search import readable_chunks
 from . import pgvector_backend
+from .content_revisions import current
+from .store import KnowledgeStore
 
 indexes = metadata.tables["knowledge_vector_indexes"]
 index_metadata = metadata.tables["knowledge_vector_metadata"]
@@ -64,6 +66,18 @@ class VectorService:
             raise GatewayError(403, "model_not_allowed", "Model is not assigned to this tenant")
         config = self.gateway.resolve(model, "embeddings")
         return rows, config
+
+    def revision(self, tenant, app, version, model):
+        with self.database.read() as db:
+            KnowledgeStore.scope(db, tenant, app, version, public=True)
+            revision = current(db, version)
+        if model not in TenantStore(self.database).allowed(tenant):
+            raise GatewayError(403, "model_not_allowed", "Model is not assigned to this tenant")
+        return revision, ModelStore.etag(self.gateway.resolve(model, "embeddings"))
+
+    def validate_revision(self, tenant, app, version, model, expected):
+        if self.revision(tenant, app, version, model) != expected:
+            raise GatewayError(409, "index_stale", "Content or model changed during indexing")
 
     def validate_snapshot(self, tenant, app, version, model, content_hash, model_hash):
         rows, config = self.snapshot(tenant, app, version, model)
@@ -141,14 +155,19 @@ class VectorService:
         native = pgvector_backend.enabled(self.database)
         if native:
             await run_in_threadpool(pgvector_backend.check, self.database)
+        revision = await run_in_threadpool(self.revision, tenant, app, version, model)
         rows, config = await run_in_threadpool(self.snapshot, tenant, app, version, model)
+        await run_in_threadpool(self.validate_revision, tenant, app, version, model, revision)
         if not rows or len(rows) > MAX_INDEX_CHUNKS:
             raise GatewayError(409, "index_capacity", "Indexing requires 1..128 published chunks")
         content_hash, model_hash = fingerprint(rows), ModelStore.etag(config)
         payload = []
         dimensions = None
+        progress_revision = f"{revision[0]}:{content_hash}"
         if checkpoint:
-            payload, dimensions = await run_in_threadpool(checkpoint.load, content_hash, model_hash)
+            payload, dimensions = await run_in_threadpool(
+                checkpoint.load, progress_revision, model_hash
+            )
             if len(payload) > len(rows) or any(len(vector) != dimensions for vector in payload):
                 raise GatewayError(409, "index_checkpoint_invalid", "Invalid index checkpoint")
         try:
@@ -157,13 +176,12 @@ class VectorService:
                     if start:
                         # Stop subsequent upstream calls when content or permissions change.
                         await run_in_threadpool(
-                            self.validate_snapshot,
+                            self.validate_revision,
                             tenant,
                             app,
                             version,
                             model,
-                            content_hash,
-                            model_hash,
+                            revision,
                         )
                     batch = rows[start : start + 16]
                     request = EmbeddingRequest(model=model, input=[row["text"] for row in batch])
@@ -180,7 +198,12 @@ class VectorService:
                     payload.extend(unit(vector) for vector in result.vectors)
                     if checkpoint:
                         await run_in_threadpool(
-                            checkpoint.save, content_hash, model_hash, payload, dimensions
+                            checkpoint.save,
+                            progress_revision,
+                            model_hash,
+                            payload[start:],
+                            dimensions,
+                            start=start,
                         )
         except TimeoutError:
             raise GatewayError(
@@ -189,12 +212,18 @@ class VectorService:
         await run_in_threadpool(
             self.validate_snapshot, tenant, app, version, model, content_hash, model_hash
         )
+        await run_in_threadpool(self.validate_revision, tenant, app, version, model, revision)
         serialized = json.dumps(payload, separators=(",", ":"))
         if len(serialized) > 16 * 1024 * 1024:
             raise GatewayError(409, "index_capacity", "Index payload exceeds 16 MiB")
 
         def save():
             with self.database.write("application:" + app) as db:
+                KnowledgeStore.scope(db, tenant, app, version, public=True)
+                if current(db, version) != revision[0]:
+                    raise GatewayError(
+                        409, "index_stale", "Content changed before index publication"
+                    )
                 if on_save:
                     on_save(db)
                 db.execute(

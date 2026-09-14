@@ -12,7 +12,7 @@ from agent_nexus.core.errors import GatewayError
 from agent_nexus.storage.database import metadata
 from .vectors import VectorService, MAX_INDEX_CHUNKS
 from agent_nexus.tenants.quotas import policy
-from .index_checkpoints import IndexCheckpoint, checkpoints
+from .index_checkpoints import IndexCheckpoint, clear
 
 jobs = metadata.tables["knowledge_index_jobs"]
 
@@ -130,13 +130,7 @@ class IndexJobs:
                 .where(expired, jobs.c.attempts >= 3)
                 .values(status="failed", error="worker_interrupted", claim_token="", lease_until=0)
             )
-            db.execute(
-                checkpoints.delete().where(
-                    checkpoints.c.job_id.in_(
-                        select(jobs.c.id).where(jobs.c.status.in_(["failed", "succeeded"]))
-                    )
-                )
-            )
+            clear(db, select(jobs.c.id).where(jobs.c.status.in_(["failed", "succeeded"])))
             row = (
                 db.execute(
                     select(jobs)
@@ -177,7 +171,7 @@ class IndexJobs:
         )
         if result.rowcount != 1:
             raise GatewayError(409, "index_lease_lost", "Index worker lease is no longer valid")
-        db.execute(checkpoints.delete().where(checkpoints.c.job_id == task["id"]))
+        clear(db, [task["id"]])
 
 
 async def run_once(database, gateway):

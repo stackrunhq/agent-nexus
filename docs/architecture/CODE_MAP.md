@@ -118,3 +118,9 @@ agent-nexus/
 - `knowledge/index_checkpoints.py`：任务级进度、内容/模型修订匹配、租约写入保护。
 - `storage/index_checkpoint_schema.py` 与 `migrations/versions/0011_index_checkpoints.py`：检查点表和显式升级。
 - `api/tests/knowledge/test_index_checkpoints.py`：中断恢复、修订变化、旧 Worker 隔离及升级回归。
+# 步骤 34 导航
+
+- `api/src/agent_nexus/knowledge/content_revisions.py`：版本内容修订计数；`store.py` 在解析/发布事务中递增。
+- `api/src/agent_nexus/knowledge/index_checkpoints.py`：独立批次追加、连续性/容量检查和租约保护。
+- `api/src/agent_nexus/storage/index_progress_schema.py` 与 `storage/migrations/versions/0012_index_progress.py`：两张新表及旧进度清理迁移。
+- `api/tests/knowledge/test_index_progress.py`：计数回滚、批次追加、全文读取次数及升级回归。
