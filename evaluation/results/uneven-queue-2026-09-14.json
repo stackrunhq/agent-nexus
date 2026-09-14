@@ -1,0 +1,70 @@
+{
+  "scope": "one PostgreSQL database per worker-count scenario; concurrent async workers and threaded database calls",
+  "model": "mock 64 dimensions, 5ms async delay; not real model performance",
+  "fairness_scope": "finite measured arrival schedule; no starvation observed is not a scheduling guarantee",
+  "arrival_schedule": "hot tenant each tick; three cold tenants every fifth tick; 20ms sleep after submissions",
+  "results": [
+    {
+      "waves": 30,
+      "workers": 1,
+      "tenants": 4,
+      "versions_per_tenant": [
+        4,
+        1,
+        1,
+        1
+      ],
+      "continuous": true,
+      "submission_requests": 138,
+      "successful_jobs": 33,
+      "claimed_per_tenant": {
+        "tenant-0": 25,
+        "tenant-3": 3,
+        "tenant-1": 3,
+        "tenant-2": 2
+      },
+      "wave_drain_ms": [
+        2671.821199997794
+      ],
+      "tenant_max_wait_ms": {
+        "tenant-0": 1405.7951999711804,
+        "tenant-1": 895.1525000156835,
+        "tenant-2": 1217.4274999997579,
+        "tenant-3": 556.2428000266664
+      },
+      "duplicate_claims": 0,
+      "remaining_checkpoints": 0
+    },
+    {
+      "waves": 30,
+      "workers": 4,
+      "tenants": 4,
+      "versions_per_tenant": [
+        4,
+        1,
+        1,
+        1
+      ],
+      "continuous": true,
+      "submission_requests": 138,
+      "successful_jobs": 89,
+      "claimed_per_tenant": {
+        "tenant-0": 71,
+        "tenant-2": 6,
+        "tenant-3": 6,
+        "tenant-1": 6
+      },
+      "wave_drain_ms": [
+        4824.008300027344
+      ],
+      "tenant_max_wait_ms": {
+        "tenant-0": 207.0341999642551,
+        "tenant-1": 350.27530003571883,
+        "tenant-2": 129.0910000097938,
+        "tenant-3": 83.4444000502117
+      },
+      "duplicate_claims": 0,
+      "remaining_checkpoints": 0
+    }
+  ]
+}

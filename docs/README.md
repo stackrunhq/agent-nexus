@@ -1,5 +1,7 @@
 # 文档导航
 
+- [不均衡持续入队](UNEVEN_QUEUE.md)：高低频租户、任务合并与等待观测。
+
 - [同库多租户 Worker 基准](SHARED_QUEUE_BENCHMARK.md)：多轮竞争、去重、租户完成量与公平性边界。
 
 - [多管线与进程树内存](PIPELINE_CONCURRENCY.md)：2/4 并发完整场景、进程分组和实测范围。

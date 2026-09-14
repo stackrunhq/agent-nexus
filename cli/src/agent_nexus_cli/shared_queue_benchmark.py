@@ -24,7 +24,7 @@ from agent_nexus_cli.database import upgrade
 from agent_nexus_cli.postgres_pipeline import disposable_database
 
 
-def benchmark(target, waves=10, workers=4):
+def benchmark(target, waves=10, workers=4, *, continuous=False):
     if not 1 <= waves <= 50 or workers not in (1, 2, 4):
         raise ValueError("waves 1..50, workers 1/2/4")
     upgrade(target)
@@ -85,7 +85,8 @@ def benchmark(target, waves=10, workers=4):
             root = "/api/v1/admin/tenants/" + tenant["id"] + "/applications"
             app = request("POST", root, json={"name": "ERP", "slug": "erp"})
             root += "/" + app["id"] + "/versions"
-            for version_index in range(2):
+            versions = (4 if tenant_index == 0 else 1) if continuous else 2
+            for version_index in range(versions):
                 version = request("POST", root, json={"version": str(version_index)})
                 scope = root + "/" + version["id"]
                 response = client.post(
@@ -114,7 +115,7 @@ def benchmark(target, waves=10, workers=4):
                         {
                             "id": task["id"],
                             "tenant": names[task["tenant_id"]],
-                            "wait_ms": (time.perf_counter() - submitted[task["id"]]) * 1000,
+                            "claimed_at": time.perf_counter(),
                         }
                     )
             return task
@@ -127,8 +128,45 @@ def benchmark(target, waves=10, workers=4):
             await asyncio.wait_for(asyncio.gather(*(worker() for _ in range(workers))), timeout=120)
 
         durations = []
+        submission_requests = 0
+
+        async def stream():
+            done = asyncio.Event()
+
+            async def producer():
+                nonlocal submission_requests
+                for tick in range(waves):
+                    for tenant, scope, _ in scopes:
+                        if names[tenant] != "tenant-0" and tick % 5:
+                            continue
+                        started = time.perf_counter()
+                        task = await asyncio.to_thread(
+                            request, "POST", scope + "/index-jobs", json={"model": "embed"}
+                        )
+                        submitted.setdefault(task["id"], started)
+                        submission_requests += 1
+                    await asyncio.sleep(0.02)
+                done.set()
+
+            async def worker():
+                while True:
+                    producer_finished = done.is_set()
+                    worked = await run_once(database, client.app.state.gateway)
+                    if not worked:
+                        if producer_finished:
+                            return
+                        await asyncio.sleep(0.005)
+
+            await asyncio.wait_for(
+                asyncio.gather(producer(), *(worker() for _ in range(workers))), 120
+            )
+
         with patch.object(IndexJobs, "claim", claim):
-            for _ in range(waves):
+            if continuous:
+                started = time.perf_counter()
+                asyncio.run(stream())
+                durations.append((time.perf_counter() - started) * 1000)
+            for _ in range(0 if continuous else waves):
                 for _, scope, _ in scopes:
                     started = time.perf_counter()
                     task = request("POST", scope + "/index-jobs", json={"model": "embed"})
@@ -140,13 +178,17 @@ def benchmark(target, waves=10, workers=4):
                 durations.append((time.perf_counter() - started) * 1000)
         with database.read() as db:
             rows = list(db.execute(jobs.select()).mappings())
-            assert len(rows) == waves * len(scopes)
+            assert len(rows) == (len(submitted) if continuous else waves * len(scopes))
             assert all(row["status"] == "succeeded" and row["attempts"] == 1 for row in rows)
             assert db.execute(checkpoints.select()).first() is None
             assert db.execute(batches.select()).first() is None
         assert Counter(row["id"] for row in claims) == Counter(submitted.keys())
+        for row in claims:
+            row["wait_ms"] = (row["claimed_at"] - submitted[row["id"]]) * 1000
         counts = Counter(row["tenant"] for row in claims)
-        assert set(counts.values()) == {waves * 2}
+        assert set(counts) == set(names.values())
+        if not continuous:
+            assert set(counts.values()) == {waves * 2}
         for _, scope, document in scopes:
             result = request("GET", scope + "/vector-index?model=embed")
             assert result["status"] == "ready" and result["chunks"] == 16
@@ -159,7 +201,9 @@ def benchmark(target, waves=10, workers=4):
             "waves": waves,
             "workers": workers,
             "tenants": 4,
-            "versions_per_tenant": 2,
+            "versions_per_tenant": [4, 1, 1, 1] if continuous else [2, 2, 2, 2],
+            "continuous": continuous,
+            "submission_requests": submission_requests if continuous else waves * len(scopes) * 2,
             "successful_jobs": len(rows),
             "claimed_per_tenant": dict(counts),
             "wave_drain_ms": durations,
@@ -176,6 +220,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--waves", type=int, default=10, choices=range(1, 51))
+    parser.add_argument(
+        "--continuous",
+        action="store_true",
+        help="Uneven producer remains active while workers consume",
+    )
     args = parser.parse_args()
     target = os.getenv("NEXUS_TEST_PGVECTOR_URL")
     if not target:
@@ -185,13 +234,16 @@ def main():
     results = []
     for workers in (1, 4):
         with disposable_database(target) as database:
-            results.append(benchmark(database, args.waves, workers))
+            results.append(benchmark(database, args.waves, workers, continuous=args.continuous))
     args.output.write_text(
         json.dumps(
             {
                 "scope": "one PostgreSQL database per worker-count scenario; concurrent async workers and threaded database calls",
                 "model": "mock 64 dimensions, 5ms async delay; not real model performance",
-                "fairness_scope": "balanced finite waves; no starvation observed is not a scheduling guarantee",
+                "fairness_scope": "finite measured arrival schedule; no starvation observed is not a scheduling guarantee",
+                "arrival_schedule": "hot tenant each tick; three cold tenants every fifth tick; 20ms sleep after submissions"
+                if args.continuous
+                else "balanced waves drained before next submission",
                 "results": results,
             },
             indent=2,

@@ -151,3 +151,7 @@ agent-nexus/
 
 - `cli/src/agent_nexus_cli/shared_queue_benchmark.py`：同库多租户提交、并发 Worker 消费、领取记录和结果校验。
 - `evaluation/results/shared-queue-2026-09-14.json`：每轮耗时及租户等待数据；`docs/SHARED_QUEUE_BENCHMARK.md`：命令和公平性边界。
+# 步骤 41 导航
+
+- `cli/src/agent_nexus_cli/shared_queue_benchmark.py`：--continuous 不均衡生产者、共享 Worker 和首次提交等待计时。
+- `evaluation/results/uneven-queue-2026-09-14.json`：最终实测；`docs/UNEVEN_QUEUE.md`：负载设计和公平性判断。
