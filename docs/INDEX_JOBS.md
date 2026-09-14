@@ -34,3 +34,6 @@ python -m agent_nexus_cli.worker --queue indexes
 当前数据库为 0007，新增 tenant_index_quotas，共 16 张业务表；升级前停止 API 与 Worker 并备份。企业差异化限额通过 index-quota 管理接口配置。
 
 当前数据库 0008 新增 model_calls，17 张业务表，覆盖企业网关调用结果及上游 token 账本。升级前备份并停止 API/Worker；调用次数与 token 配额尚未实现。
+# 当前更新：批次恢复
+
+0011 起后台 Worker 支持持久检查点和同任务中断恢复，成功/终止失败时清理。内容或模型修订不匹配时重新构建；普通失败不会自动续跑。升级、配额及重复调用边界见 [索引检查点](INDEX_CHECKPOINTS.md)。以下为历史基础设计。

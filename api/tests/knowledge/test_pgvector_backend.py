@@ -98,6 +98,7 @@ def test_native_api_matches_portable_and_honors_withdrawal(scope, monkeypatch):
         legacy = create_engine(target)
         try:
             with legacy.begin() as db:
+                db.execute(text("DROP TABLE knowledge_index_checkpoints"))
                 db.execute(text("DROP TABLE knowledge_vector_metadata"))
                 db.execute(text("UPDATE alembic_version SET version_num='0009'"))
             upgrade(target)

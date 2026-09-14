@@ -38,3 +38,6 @@ NEXUS_MODEL_DAILY_LIMIT 默认每企业每日 1000 次模型调用；API 与 ind
 可选增加 compose.pgvector.yaml，在 PostgreSQL 覆盖文件之后加载。必须先初始化扩展与派生缓存，再启动后端并重建索引。详见 [pgvector 部署](../docs/PGVECTOR.md)。
 
 当前数据库 0010，新增 knowledge_vector_metadata，共 19 张业务表；升级回填现有向量的分片数和摘要，不调用模型。升级前停止 API/Worker 并备份。
+# 当前升级要求：0011
+
+停止 API 和全部 Worker、完成备份后执行数据库升级，再启动服务；运行角色需 knowledge_index_checkpoints 读写权限。后台索引中断恢复说明见 [索引检查点](../docs/INDEX_CHECKPOINTS.md)。当前 20 张业务表，以下历史版本说明请按此版本升级。

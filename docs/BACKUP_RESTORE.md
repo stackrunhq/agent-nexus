@@ -1,5 +1,9 @@
 # PostgreSQL 实库与备份恢复演练
 
+## 0011 索引检查点（2026-09-14）
+
+当前 20 张业务表，备份恢复必须包含 knowledge_index_checkpoints；运行角色需该表读写权限。恢复的 processing 任务租约到期后可重新领取并校验检查点；已返回但未持久化的模型批次可能重复调用。操作见 [索引检查点](INDEX_CHECKPOINTS.md)。
+
 ## 0010 索引元数据（2026-09-14）
 
 当前共 19 张业务表，备份恢复需包含 knowledge_vector_metadata，运行角色需该表 SELECT、INSERT、UPDATE、DELETE 权限。停止 API 和全部 Worker，完成备份后执行显式数据库升级；0010 从旧向量快照回填元数据，保留原始快照摘要，无需重新调用 embedding。升级说明见 [索引元数据](VECTOR_METADATA.md)。以下为历史演练记录。

@@ -85,3 +85,6 @@ SQLite 回归、导入校验和回滚已自动测试。PostgreSQL 集成测试�
 当前数据库 0009，新增 tenant_model_quotas，共 18 张业务表。企业模型调用限额覆盖全局默认值；升级前停止 API/Worker 并备份。
 
 当前数据库 0010，新增 knowledge_vector_metadata，共 19 张业务表；升级回填现有向量的分片数和摘要，不调用模型。升级前停止 API/Worker 并备份。
+# 当前数据库：0011
+
+新增 knowledge_index_checkpoints，共 20 张业务表。旧部署先备份、停止 API 和全部 Worker，再显式升级。检查点按任务隔离，不改变已有索引；详见 [索引检查点](INDEX_CHECKPOINTS.md)。以下保留历史迁移说明。

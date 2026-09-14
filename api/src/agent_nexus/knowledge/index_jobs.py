@@ -12,6 +12,7 @@ from agent_nexus.core.errors import GatewayError
 from agent_nexus.storage.database import metadata
 from .vectors import VectorService, MAX_INDEX_CHUNKS
 from agent_nexus.tenants.quotas import policy
+from .index_checkpoints import IndexCheckpoint, checkpoints
 
 jobs = metadata.tables["knowledge_index_jobs"]
 
@@ -73,7 +74,9 @@ class IndexJobs:
             now = int(time.time())
             usage = self._usage(db, tenant, now)
             if usage["active"] >= usage["active_limit"]:
-                raise GatewayError(429, "index_queue_full", "Tenant active index task limit reached")
+                raise GatewayError(
+                    429, "index_queue_full", "Tenant active index task limit reached"
+                )
             if usage["daily_used"] >= usage["daily_limit"]:
                 raise GatewayError(
                     429, "index_daily_quota_exceeded", "Tenant daily index quota exceeded"
@@ -127,6 +130,13 @@ class IndexJobs:
                 .where(expired, jobs.c.attempts >= 3)
                 .values(status="failed", error="worker_interrupted", claim_token="", lease_until=0)
             )
+            db.execute(
+                checkpoints.delete().where(
+                    checkpoints.c.job_id.in_(
+                        select(jobs.c.id).where(jobs.c.status.in_(["failed", "succeeded"]))
+                    )
+                )
+            )
             row = (
                 db.execute(
                     select(jobs)
@@ -167,6 +177,7 @@ class IndexJobs:
         )
         if result.rowcount != 1:
             raise GatewayError(409, "index_lease_lost", "Index worker lease is no longer valid")
+        db.execute(checkpoints.delete().where(checkpoints.c.job_id == task["id"]))
 
 
 async def run_once(database, gateway):
@@ -183,6 +194,7 @@ async def run_once(database, gateway):
             task["actor"],
             task["request_id"],
             on_save=lambda db: store.finish(db, task),
+            checkpoint=IndexCheckpoint(database, task),
         )
     except Exception as exc:
         error = exc.code if isinstance(exc, GatewayError) else "index_worker_failed"

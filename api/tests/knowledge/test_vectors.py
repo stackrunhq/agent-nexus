@@ -168,7 +168,7 @@ def test_old_0004_requires_explicit_upgrade(tmp_path):
         Database(path)
     upgrade(path)
     database = Database(path)
-    assert database.check()["revision"] == "0010"
+    assert database.check()["revision"] == "0011"
     database.close()
 
 

@@ -113,3 +113,8 @@ agent-nexus/
 
 - `api/src/agent_nexus/knowledge/vectors.py`：流式内容指纹、批次间内容和授权校验、最终索引原子保存。
 - `api/tests/knowledge/test_vector_batches.py`：多批次成功、批次间失效及旧索引保留回归。
+# 步骤 33 导航
+
+- `knowledge/index_checkpoints.py`：任务级进度、内容/模型修订匹配、租约写入保护。
+- `storage/index_checkpoint_schema.py` 与 `migrations/versions/0011_index_checkpoints.py`：检查点表和显式升级。
+- `api/tests/knowledge/test_index_checkpoints.py`：中断恢复、修订变化、旧 Worker 隔离及升级回归。

@@ -135,7 +135,9 @@ class VectorService:
             "snapshot_hash": pgvector_backend.signature(index["payload"]),
         }
 
-    async def build(self, tenant, app, version, model, actor, request_id, on_save=None):
+    async def build(
+        self, tenant, app, version, model, actor, request_id, on_save=None, checkpoint=None
+    ):
         native = pgvector_backend.enabled(self.database)
         if native:
             await run_in_threadpool(pgvector_backend.check, self.database)
@@ -145,9 +147,13 @@ class VectorService:
         content_hash, model_hash = fingerprint(rows), ModelStore.etag(config)
         payload = []
         dimensions = None
+        if checkpoint:
+            payload, dimensions = await run_in_threadpool(checkpoint.load, content_hash, model_hash)
+            if len(payload) > len(rows) or any(len(vector) != dimensions for vector in payload):
+                raise GatewayError(409, "index_checkpoint_invalid", "Invalid index checkpoint")
         try:
             async with asyncio.timeout(120):
-                for start in range(0, len(rows), 16):
+                for start in range(len(payload), len(rows), 16):
                     if start:
                         # Stop subsequent upstream calls when content or permissions change.
                         await run_in_threadpool(
@@ -172,6 +178,10 @@ class VectorService:
                         )
                     dimensions = result.dimensions
                     payload.extend(unit(vector) for vector in result.vectors)
+                    if checkpoint:
+                        await run_in_threadpool(
+                            checkpoint.save, content_hash, model_hash, payload, dimensions
+                        )
         except TimeoutError:
             raise GatewayError(
                 504, "index_build_timeout", "Index build exceeded 120 seconds"
