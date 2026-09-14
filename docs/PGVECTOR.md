@@ -1,5 +1,7 @@
 # 可选 pgvector 后端（第一阶段）
 
+0010 更新：索引元数据单独持久化，正常原生检索不再加载完整向量 JSON。业务表共 19 张；升级及兼容范围见 [向量元数据](VECTOR_METADATA.md)。旧段落中的 JSON 加载限制已由此优化，但完整发布文本指纹与 128 分片限制仍保留。
+
 默认 `NEXUS_VECTOR_BACKEND=portable` 保持原行为，支持 SQLite 和普通 PostgreSQL。设置为 `pgvector` 后，索引重建会同时写入 PostgreSQL 原生 vector 缓存，检索使用数据库余弦距离排序。算法与类型参考 [pgvector 官方文档](https://github.com/pgvector/pgvector)。
 
 业务迁移仍为 **0009**，18 张业务表保持不变。新增的 `nexus_vectors.entries` 是可重建派生缓存，独立显式初始化，不参与 SQLite 导入。可移植 JSON 快照仍是来源。缓存按版本、模型和向量内容 SHA-256 绑定，旧缓存或缺失缓存返回 `409/pgvector_rebuild_required`，需启用后端后重建；不会悄悄降级。

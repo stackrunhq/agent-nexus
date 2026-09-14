@@ -75,12 +75,18 @@ def save(db, version, model, payload):
 
 
 def rank(database, version, model, payload, query, limit):
+    return rank_snapshot(
+        database, version, model, signature(payload), len(json.loads(payload)), query, limit
+    )
+
+
+def rank_snapshot(database, version, model, snapshot_hash, chunks, query, limit):
     with database.read() as db:
         require(db)
         params = {
             "version": version,
             "model": model,
-            "hash": signature(payload),
+            "hash": snapshot_hash,
             "query": json.dumps(query),
             "limit": limit,
         }
@@ -100,7 +106,7 @@ def rank(database, version, model, payload, query, limit):
             .mappings()
             .all()
         )
-        if not rows or rows[0]["total"] != len(json.loads(payload)):
+        if not rows or rows[0]["total"] != chunks:
             raise GatewayError(
                 409, "pgvector_rebuild_required", "Rebuild this index with pgvector enabled"
             )

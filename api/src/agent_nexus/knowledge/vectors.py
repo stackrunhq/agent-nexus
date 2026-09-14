@@ -20,6 +20,7 @@ from .search import readable_chunks
 from . import pgvector_backend
 
 indexes = metadata.tables["knowledge_vector_indexes"]
+index_metadata = metadata.tables["knowledge_vector_metadata"]
 MAX_INDEX_CHUNKS = 128
 MAX_DIMENSIONS = 4096
 
@@ -85,16 +86,49 @@ class VectorService:
 
     def describe(self, tenant, app, version, model):
         rows, config = self.snapshot(tenant, app, version, model)
-        index = self.load(version, model)
+        index = self.load_metadata(version, model)
         return {
             "model": model,
             "version_id": version,
             "dimensions": index["dimensions"],
-            "chunks": len(json.loads(index["payload"])),
+            "chunks": index["chunks"],
             "status": "ready"
             if fingerprint(rows) == index["content_fingerprint"]
             and ModelStore.etag(config) == index["model_fingerprint"]
             else "stale",
+        }
+
+    def load_metadata(self, version, model):
+        with self.database.read() as db:
+            row = (
+                db.execute(
+                    select(index_metadata).where(
+                        index_metadata.c.version_id == version, index_metadata.c.model == model
+                    )
+                )
+                .mappings()
+                .first()
+            )
+            if row:
+                return dict(row)
+        # Older unversioned SQLite/imported snapshots remain readable until explicitly upgraded/rebuilt.
+        index = self.load(version, model)
+        return self.metadata_values(index)
+
+    @staticmethod
+    def metadata_values(index):
+        return {
+            key: index[key]
+            for key in (
+                "version_id",
+                "model",
+                "model_fingerprint",
+                "content_fingerprint",
+                "dimensions",
+            )
+        } | {
+            "chunks": len(json.loads(index["payload"])),
+            "snapshot_hash": pgvector_backend.signature(index["payload"]),
         }
 
     async def build(self, tenant, app, version, model, actor, request_id, on_save=None):
@@ -156,6 +190,22 @@ class VectorService:
                 ApplicationStore.record(
                     db, app, actor, request_id, "vector_index_built:" + model, version
                 )
+                db.execute(
+                    index_metadata.delete().where(
+                        index_metadata.c.version_id == version, index_metadata.c.model == model
+                    )
+                )
+                db.execute(
+                    index_metadata.insert().values(
+                        version_id=version,
+                        model=model,
+                        model_fingerprint=model_hash,
+                        content_fingerprint=content_hash,
+                        dimensions=dimensions,
+                        chunks=len(rows),
+                        snapshot_hash=pgvector_backend.signature(serialized),
+                    )
+                )
                 if native:
                     pgvector_backend.save(db, version, model, serialized)
 
@@ -172,7 +222,9 @@ class VectorService:
         if not body.query.strip():
             raise GatewayError(422, "invalid_query", "Query must not be blank")
         rows, config = await run_in_threadpool(self.snapshot, tenant, app, version, body.model)
-        index = await run_in_threadpool(self.load, version, body.model)
+        index = await run_in_threadpool(
+            self.load_metadata if native else self.load, version, body.model
+        )
         model_hash, content_hash = ModelStore.etag(config), fingerprint(rows)
         if model_hash != index["model_fingerprint"] or content_hash != index["content_fingerprint"]:
             raise GatewayError(
@@ -199,11 +251,12 @@ class VectorService:
         )
         if native:
             ranked = await run_in_threadpool(
-                pgvector_backend.rank,
+                pgvector_backend.rank_snapshot,
                 self.database,
                 version,
                 body.model,
-                index["payload"],
+                index["snapshot_hash"],
+                index["chunks"],
                 query,
                 body.limit,
             )

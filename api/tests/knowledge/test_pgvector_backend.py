@@ -76,7 +76,11 @@ def test_native_api_matches_portable_and_honors_withdrawal(scope, monkeypatch):
 
     monkeypatch.setenv("NEXUS_VECTOR_BACKEND", "portable")
     _, alias = prepare(scope)
-    _, tenants, app, version, root, source = scope
+    source_client, tenants, app, version, root, source = scope
+    assert (
+        source_client.post(root + "/vector-index", headers=ADMIN, json={"model": alias}).status_code
+        == 200
+    )
     admin_url = make_url(os.environ["NEXUS_TEST_PGVECTOR_URL"])
     database_name = "nexus_native_" + uuid4().hex
     owner = create_engine(admin_url, isolation_level="AUTOCOMMIT")
@@ -91,6 +95,14 @@ def test_native_api_matches_portable_and_honors_withdrawal(scope, monkeypatch):
         finally:
             database.close()
         import_sqlite(source, target)
+        legacy = create_engine(target)
+        try:
+            with legacy.begin() as db:
+                db.execute(text("DROP TABLE knowledge_vector_metadata"))
+                db.execute(text("UPDATE alembic_version SET version_num='0009'"))
+            upgrade(target)
+        finally:
+            legacy.dispose()
         monkeypatch.setenv("NEXUS_VECTOR_BACKEND", "pgvector")
         with TestClient(
             create_app(
@@ -103,7 +115,15 @@ def test_native_api_matches_portable_and_honors_withdrawal(scope, monkeypatch):
             public = f"/api/v1/applications/{app['id']}/versions/{version['id']}/vector-search"
             member = {"Authorization": "Bearer " + tenants[0]["api_key"]}
             body = {"model": alias, "query": "password"}
-            native = client.post(public, headers=member, json=body)
+            from agent_nexus.knowledge.vectors import VectorService
+
+            with monkeypatch.context() as patch:
+                patch.setattr(
+                    VectorService,
+                    "load",
+                    lambda *args: pytest.fail("Native search must not load vector JSON"),
+                )
+                native = client.post(public, headers=member, json=body)
             assert native.status_code == 200, native.text
             assert native.json()["method"] == "pgvector_cosine"
             monkeypatch.setenv("NEXUS_VECTOR_BACKEND", "portable")

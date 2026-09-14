@@ -83,6 +83,8 @@ agent-nexus/
 
 ### 混合检索与引用问答
 
+- `storage/vector_metadata_schema.py` / `0010_vector_metadata.py`：轻量索引元数据与回填迁移；`knowledge/vectors.py:load_metadata` 避免状态查询加载向量 JSON。
+
 - `cli/src/agent_nexus_cli/vector_benchmark.py`：可重复原生缓存基准；`evaluation/results/` 保存本轮合成数据实测结果。
 
 - `knowledge/pgvector_backend.py`：原生派生缓存写入与余弦排序；`cli/src/agent_nexus_cli/pgvector.py`：显式扩展/缓存初始化。

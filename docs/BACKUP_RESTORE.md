@@ -1,5 +1,9 @@
 # PostgreSQL 实库与备份恢复演练
 
+## 0010 索引元数据（2026-09-14）
+
+当前共 19 张业务表，备份恢复需包含 knowledge_vector_metadata，运行角色需该表 SELECT、INSERT、UPDATE、DELETE 权限。停止 API 和全部 Worker，完成备份后执行显式数据库升级；0010 从旧向量快照回填元数据，保留原始快照摘要，无需重新调用 embedding。升级说明见 [索引元数据](VECTOR_METADATA.md)。以下为历史演练记录。
+
 ## 0006 索引任务（2026-09-10）
 
 0009 新增 tenant_model_quotas，当前共 18 张业务表；企业模型限额需随账本和任务一同备份恢复，运行角色需该表读写权限。

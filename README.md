@@ -1,6 +1,6 @@
 # Agent Nexus
 
-后台索引已支持持久任务和独立 Worker；升级须迁移至 **0009**。见 [后台索引操作](docs/INDEX_JOBS.md)。
+后台索引已支持持久任务和独立 Worker；升级须迁移至 **0010**。见 [后台索引操作](docs/INDEX_JOBS.md)。
 
 面向企业应用的知识库、使用指导与流程规划中台，按阶段实现。
 
@@ -171,3 +171,5 @@ npm --prefix web test
 当前数据库 0008 新增 model_calls，17 张业务表，覆盖企业网关调用结果及上游 token 账本。升级前备份并停止 API/Worker；调用次数与 token 配额尚未实现。
 
 当前数据库 0009，新增 tenant_model_quotas，共 18 张业务表。企业模型调用限额覆盖全局默认值；升级前停止 API/Worker 并备份。
+
+当前数据库 0010，新增 knowledge_vector_metadata，共 19 张业务表；升级回填现有向量的分片数和摘要，不调用模型。升级前停止 API/Worker 并备份。
