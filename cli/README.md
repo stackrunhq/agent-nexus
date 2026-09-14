@@ -1,5 +1,7 @@
 # 运维命令
 
+同库队列基准：`python -m agent_nexus_cli.shared_queue_benchmark --output evaluation/results/shared-queue-local.json --waves 10`。在专用服务器创建隔离数据库，对比 1/4 Worker，详见 [同库多租户基准](../docs/SHARED_QUEUE_BENCHMARK.md)。
+
 多管线进程树基准：`python -m agent_nexus_cli.pipeline_concurrency --postgres-pid 12345 --output evaluation/results/pipeline-concurrency-local.json`。要求本机专用 PostgreSQL 的准确主进程 PID，详见 [采样范围](../docs/PIPELINE_CONCURRENCY.md)。
 
 PostgreSQL 完整管线：`python -m agent_nexus_cli.postgres_pipeline --output evaluation/results/postgres-pipeline-local.json`，需要测试服务器 `NEXUS_TEST_PGVECTOR_URL` 及创建数据库权限，运行时自建随机隔离数据库，结束后删除。见 [运行边界](../docs/POSTGRES_PIPELINE.md)。

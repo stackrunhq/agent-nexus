@@ -1,0 +1,73 @@
+{
+  "scope": "one PostgreSQL database per worker-count scenario; concurrent async workers and threaded database calls",
+  "model": "mock 64 dimensions, 5ms async delay; not real model performance",
+  "fairness_scope": "balanced finite waves; no starvation observed is not a scheduling guarantee",
+  "results": [
+    {
+      "waves": 10,
+      "workers": 1,
+      "tenants": 4,
+      "versions_per_tenant": 2,
+      "successful_jobs": 80,
+      "claimed_per_tenant": {
+        "tenant-0": 20,
+        "tenant-2": 20,
+        "tenant-3": 20,
+        "tenant-1": 20
+      },
+      "wave_drain_ms": [
+        288.94599998602644,
+        553.9296999922954,
+        546.5395000064746,
+        725.3888000268489,
+        857.5478999991901,
+        686.1301999888383,
+        787.3115999973379,
+        838.4837000048719,
+        562.2943000053056,
+        523.5345999826677
+      ],
+      "tenant_max_wait_ms": {
+        "tenant-0": 880.796100012958,
+        "tenant-1": 823.1753999716602,
+        "tenant-2": 748.1724999961443,
+        "tenant-3": 799.621699959971
+      },
+      "duplicate_claims": 0,
+      "remaining_checkpoints": 0
+    },
+    {
+      "waves": 10,
+      "workers": 4,
+      "tenants": 4,
+      "versions_per_tenant": 2,
+      "successful_jobs": 80,
+      "claimed_per_tenant": {
+        "tenant-1": 20,
+        "tenant-0": 20,
+        "tenant-2": 20,
+        "tenant-3": 20
+      },
+      "wave_drain_ms": [
+        270.3556000487879,
+        274.9428999959491,
+        273.32139998907223,
+        274.72860005218536,
+        287.5951000023633,
+        293.8680999795906,
+        283.2399000180885,
+        298.0259000323713,
+        283.3522000000812,
+        298.41589997522533
+      ],
+      "tenant_max_wait_ms": {
+        "tenant-0": 379.4806000078097,
+        "tenant-1": 336.1383000155911,
+        "tenant-2": 273.19019997958094,
+        "tenant-3": 216.73179999925196
+      },
+      "duplicate_claims": 0,
+      "remaining_checkpoints": 0
+    }
+  ]
+}
