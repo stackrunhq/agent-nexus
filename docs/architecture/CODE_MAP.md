@@ -129,3 +129,7 @@ agent-nexus/
 - `web/src/app/features/knowledge/IndexJobProgress.tsx`：任务批次及恢复提示；`VectorPanel.tsx` 接入列表刷新。
 - `api/src/agent_nexus/knowledge/index_jobs.py`：任务归属校验、批次数聚合与租约状态。
 - `api/tests/knowledge/test_index_job_progress.py` 与 `web/src/app/features/knowledge/IndexJobProgress.test.tsx`：进度接口与展示回归。
+# 步骤 36 导航
+
+- `cli/src/agent_nexus_cli/pipeline_benchmark.py`：临时数据库、API/Worker 基准、中断恢复注入与结果输出。
+- `evaluation/results/pipeline-2026-09-14.json`：本机原始采样；`docs/PIPELINE_BENCHMARK.md`：命令、数据解释和边界。

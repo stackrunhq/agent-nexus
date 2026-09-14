@@ -1,0 +1,207 @@
+{
+  "backend": "sqlite_portable",
+  "models": "deterministic_http_mock",
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "limitations": [
+    "single process TestClient; no network latency or real model quality",
+    "simulated cancellation; lease wait excluded; no concurrent load",
+    "synthetic TXT only; not PostgreSQL, Docker or scanned PDF capacity"
+  ],
+  "scenarios": [
+    {
+      "chunks": 16,
+      "characters": 13750,
+      "dimensions": 64,
+      "rounds": 5,
+      "timings": {
+        "upload_ms": 13.033399998676032,
+        "parse_worker_ms": 192.51059996895492,
+        "build_worker_ms": 62.225100002251565,
+        "interrupted_attempt_ms": 41.945000004488975,
+        "resume_worker_ms": 29.53900001011789,
+        "search": {
+          "samples_ms": [
+            3.937200002837926,
+            2.793000021483749,
+            2.7753000031225383,
+            2.82990001142025,
+            2.632400020956993
+          ],
+          "median_ms": 2.793000021483749,
+          "p95_ms": 3.937200002837926
+        },
+        "vector-search": {
+          "samples_ms": [
+            23.247100005391985,
+            23.076999990735203,
+            23.488499980885535,
+            23.460500000510365,
+            25.23900003870949
+          ],
+          "median_ms": 23.460500000510365,
+          "p95_ms": 25.23900003870949
+        },
+        "hybrid-search": {
+          "samples_ms": [
+            30.86920001078397,
+            28.74029998201877,
+            29.001500050071627,
+            29.040299996268004,
+            28.955300047528
+          ],
+          "median_ms": 29.001500050071627,
+          "p95_ms": 30.86920001078397
+        },
+        "answers": {
+          "samples_ms": [
+            51.18069995660335,
+            53.09329996816814,
+            51.718899980187416,
+            55.15669996384531,
+            49.93129998911172
+          ],
+          "median_ms": 51.718899980187416,
+          "p95_ms": 55.15669996384531
+        }
+      },
+      "initial_embedding_calls": 1,
+      "resumed_embedding_calls": 0,
+      "reused_chunks": 16,
+      "quota_blocks_before_model": true
+    },
+    {
+      "chunks": 64,
+      "characters": 54550,
+      "dimensions": 64,
+      "rounds": 5,
+      "timings": {
+        "upload_ms": 10.485800041351467,
+        "parse_worker_ms": 194.24300000537187,
+        "build_worker_ms": 143.12659995630383,
+        "interrupted_attempt_ms": 44.89610000746325,
+        "resume_worker_ms": 115.5307000153698,
+        "search": {
+          "samples_ms": [
+            4.655600001569837,
+            4.3135000159963965,
+            4.52619994757697,
+            4.576499981340021,
+            4.151100001763552
+          ],
+          "median_ms": 4.52619994757697,
+          "p95_ms": 4.655600001569837
+        },
+        "vector-search": {
+          "samples_ms": [
+            26.345000020228326,
+            25.532200001180172,
+            27.652999968267977,
+            25.303800008259714,
+            25.34860000014305
+          ],
+          "median_ms": 25.532200001180172,
+          "p95_ms": 27.652999968267977
+        },
+        "hybrid-search": {
+          "samples_ms": [
+            36.26930003520101,
+            33.88599999016151,
+            33.938199980184436,
+            34.03859998797998,
+            34.477600012905896
+          ],
+          "median_ms": 34.03859998797998,
+          "p95_ms": 36.26930003520101
+        },
+        "answers": {
+          "samples_ms": [
+            59.93839999428019,
+            60.61079999199137,
+            101.85300000011921,
+            107.65089996857569,
+            103.19639998488128
+          ],
+          "median_ms": 101.85300000011921,
+          "p95_ms": 107.65089996857569
+        }
+      },
+      "initial_embedding_calls": 4,
+      "resumed_embedding_calls": 3,
+      "reused_chunks": 16,
+      "quota_blocks_before_model": true
+    },
+    {
+      "chunks": 128,
+      "characters": 108950,
+      "dimensions": 64,
+      "rounds": 5,
+      "timings": {
+        "upload_ms": 12.971200048923492,
+        "parse_worker_ms": 216.6274000192061,
+        "build_worker_ms": 444.3996999762021,
+        "interrupted_attempt_ms": 63.23749996954575,
+        "resume_worker_ms": 379.562399990391,
+        "search": {
+          "samples_ms": [
+            15.28859999962151,
+            16.92719996208325,
+            13.757199980318546,
+            18.23540002806112,
+            14.497799973469228
+          ],
+          "median_ms": 15.28859999962151,
+          "p95_ms": 18.23540002806112
+        },
+        "vector-search": {
+          "samples_ms": [
+            48.589999962132424,
+            40.42439995100722,
+            47.86009999224916,
+            45.80369999166578,
+            52.86500003421679
+          ],
+          "median_ms": 47.86009999224916,
+          "p95_ms": 52.86500003421679
+        },
+        "hybrid-search": {
+          "samples_ms": [
+            79.88309999927878,
+            77.23509997595102,
+            71.37920003151521,
+            65.55269996169955,
+            64.11839998327196
+          ],
+          "median_ms": 71.37920003151521,
+          "p95_ms": 79.88309999927878
+        },
+        "answers": {
+          "samples_ms": [
+            120.96500000916421,
+            126.29889999516308,
+            131.63670001085848,
+            139.10130003932863,
+            139.90770000964403
+          ],
+          "median_ms": 131.63670001085848,
+          "p95_ms": 139.90770000964403
+        }
+      },
+      "initial_embedding_calls": 8,
+      "resumed_embedding_calls": 7,
+      "reused_chunks": 16,
+      "quota_blocks_before_model": true
+    },
+    {
+      "chunks": 129,
+      "characters": 109800,
+      "dimensions": 64,
+      "rounds": 5,
+      "timings": {
+        "upload_ms": 18.991799966897815,
+        "parse_worker_ms": 242.1487999963574
+      },
+      "capacity_rejected_before_model": true
+    }
+  ]
+}
