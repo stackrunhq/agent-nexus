@@ -5,10 +5,10 @@ import {SearchPanel} from './SearchPanel';
 import {AnswerPanel} from './AnswerPanel';
 import {QuotaPanel} from './QuotaPanel';
 import {ModelCallsPanel} from './ModelCallsPanel';
+import {IndexJobProgress, type IndexJob} from './IndexJobProgress';
 
 interface Model {alias: string; enabled: boolean; capabilities: string[]; deployment: string}
 interface Index {status: 'ready' | 'stale'; dimensions: number; chunks: number}
-interface Job {id: string; model: string; status: string; attempts: number; error: string | null}
 interface Usage {daily_limit: number; daily_used: number; reset_at: number; active: number; active_limit: number}
 export function VectorPanel({client, root}: {client: AdminClient; root: string}) {
   const [models, setModels] = useState<Model[]>([]);
@@ -47,7 +47,7 @@ export function VectorPanel({client, root}: {client: AdminClient; root: string})
 }
 
 function ModelIndex({client, root, model, chatModels}: {client: AdminClient; root: string; model: Model; chatModels: Model[]}) {
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<IndexJob[]>([]);
   const [usage, setUsage] = useState<Usage>();
   const [index, setIndex] = useState<Index>();
   const [missing, setMissing] = useState(false);
@@ -59,7 +59,7 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
   async function refresh(signal: AbortSignal) {
     const quota = await client.request<Usage>(`${root.split('/applications/')[0]}/index-usage`, 'GET', undefined, signal);
     if (!signal.aborted) setUsage(quota);
-    const tasks = await client.request<{data: Job[]}>(`${root}/index-jobs`, 'GET', undefined, signal);
+    const tasks = await client.request<{data: IndexJob[]}>(`${root}/index-jobs`, 'GET', undefined, signal);
     if (!signal.aborted) setJobs(tasks.data.filter(task => task.model === model.alias));
     try {
       const result = await client.request<Index>(`${root}/vector-index?model=${encodeURIComponent(model.alias)}`, 'GET', undefined, signal);
@@ -87,7 +87,7 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
     <Button disabled={busy} onClick={() => void run()}>刷新索引状态</Button>
     {usage && <p>今日索引任务 {usage.daily_used}/{usage.daily_limit} · 活跃任务 {usage.active}/{usage.active_limit} · 重置时间 {new Date(usage.reset_at * 1000).toLocaleString()}</p>}
     <p>任务状态按需刷新；请启动索引 Worker。相同版本/模型的活跃任务复用，额度按当前企业配置执行。</p>
-    {jobs.map(task => <p key={task.id}>任务 {task.id}：{({queued:'排队中',processing:'构建中',succeeded:'构建成功',failed:'构建失败'} as Record<string,string>)[task.status] || task.status} · 第 {task.attempts} 次处理{task.error ? ` · ${task.error}` : ''}</p>)}
+    {jobs.map(task => <IndexJobProgress key={task.id} task={task}/>)}
     <Button disabled={busy} onClick={() => setConfirm(true)}>建立或重建索引</Button>
     {index?.status === 'ready' && <SearchPanel key={revision} client={client} root={`${root}/vector-search`} enabled={!busy} model={model.alias}/>}
     {index?.status === 'ready' && <SearchPanel key={`hybrid:${revision}`} client={client} root={`${root}/hybrid-search`} enabled={!busy} model={model.alias} hybrid/>}

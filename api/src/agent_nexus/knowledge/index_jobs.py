@@ -12,7 +12,8 @@ from agent_nexus.core.errors import GatewayError
 from agent_nexus.storage.database import metadata
 from .vectors import VectorService, MAX_INDEX_CHUNKS
 from agent_nexus.tenants.quotas import policy
-from .index_checkpoints import IndexCheckpoint, clear
+from .index_checkpoints import IndexCheckpoint, clear, batches
+from .store import KnowledgeStore
 
 jobs = metadata.tables["knowledge_index_jobs"]
 
@@ -104,12 +105,32 @@ class IndexJobs:
             self.finish(db, task, error)
 
     def list(self, tenant, app, version):
+        progress = (
+            select(batches.c.job_id, func.count().label("saved_batches"))
+            .group_by(batches.c.job_id)
+            .subquery()
+        )
+        now = int(time.time())
         with self.database.read() as db:
+            KnowledgeStore.scope(db, tenant, app, version)
             return {
                 "data": [
-                    self.view(row)
+                    {
+                        **self.view(row),
+                        "saved_batches": row["saved_batches"] or 0,
+                        "recovery_state": (
+                            "waiting_for_worker"
+                            if row["lease_until"] <= now
+                            else "retrying"
+                            if row["attempts"] > 1
+                            else "running"
+                        )
+                        if row["status"] == "processing"
+                        else "inactive",
+                    }
                     for row in db.execute(
-                        select(jobs)
+                        select(jobs, progress.c.saved_batches)
+                        .outerjoin(progress, jobs.c.id == progress.c.job_id)
                         .where(
                             jobs.c.tenant_id == tenant,
                             jobs.c.app_id == app,

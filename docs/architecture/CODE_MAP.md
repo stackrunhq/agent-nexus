@@ -124,3 +124,8 @@ agent-nexus/
 - `api/src/agent_nexus/knowledge/index_checkpoints.py`：独立批次追加、连续性/容量检查和租约保护。
 - `api/src/agent_nexus/storage/index_progress_schema.py` 与 `storage/migrations/versions/0012_index_progress.py`：两张新表及旧进度清理迁移。
 - `api/tests/knowledge/test_index_progress.py`：计数回滚、批次追加、全文读取次数及升级回归。
+# 步骤 35 导航
+
+- `web/src/app/features/knowledge/IndexJobProgress.tsx`：任务批次及恢复提示；`VectorPanel.tsx` 接入列表刷新。
+- `api/src/agent_nexus/knowledge/index_jobs.py`：任务归属校验、批次数聚合与租约状态。
+- `api/tests/knowledge/test_index_job_progress.py` 与 `web/src/app/features/knowledge/IndexJobProgress.test.tsx`：进度接口与展示回归。
