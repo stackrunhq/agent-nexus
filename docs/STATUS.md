@@ -85,3 +85,6 @@ API/协议使用自动化测试，详细结果见 VALIDATION.md。真实模型�
 # 步骤 37：当前状态
 
 已完成原生 pgvector 1/2/4 线程、128/1024 行基准与 Python 分配峰值记录，精确检索结果一致。尚非 PostgreSQL 完整管线/RSS 测试，业务上限仍 128。下一步完整 API/Worker 接入隔离 PostgreSQL 基准。见 [并发基准](VECTOR_CONCURRENCY.md)。
+# 步骤 38：当前状态
+
+PostgreSQL/pgvector 完整模拟模型管线、四请求竞争一次额度、Python 工作集采样已实测通过；自建数据库和实例已清理。下一步多个成功任务并发及数据库/解析子进程内存测量。128 分片限制不变，见 [实测说明](POSTGRES_PIPELINE.md)。

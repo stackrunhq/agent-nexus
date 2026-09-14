@@ -1,6 +1,7 @@
 """Offline API/Worker pipeline benchmark in a disposable SQLite database; mocked models."""
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import asyncio
 import hashlib
 import json
@@ -25,7 +26,7 @@ from agent_nexus.models.schemas import ModelConfig
 from agent_nexus_cli.database import upgrade
 
 
-def scenario(count, dimensions=64, rounds=5):
+def scenario(count, dimensions=64, rounds=5, *, postgres_target=None):
     if count not in (16, 64, 128, 129) or not 2 <= dimensions <= 4096 or not 1 <= rounds <= 20:
         raise ValueError("Use counts 16/64/128/129, dimensions 2..4096, rounds 1..20")
     calls = []
@@ -65,14 +66,23 @@ def scenario(count, dimensions=64, rounds=5):
         patch.dict(
             os.environ,
             {
-                "NEXUS_VECTOR_BACKEND": "portable",
+                "NEXUS_VECTOR_BACKEND": "pgvector" if postgres_target else "portable",
                 "NEXUS_MODEL_DAILY_LIMIT": "1000",
                 "NEXUS_INDEX_DAILY_LIMIT": "100",
             },
         ),
     ):
-        path = str(Path(directory) / "benchmark.db")
+        path = postgres_target or str(Path(directory) / "benchmark.db")
         upgrade(path)
+        if postgres_target:
+            from agent_nexus.storage.database import Database
+            from agent_nexus.knowledge.pgvector_backend import setup
+
+            database = Database(path)
+            try:
+                setup(database)
+            finally:
+                database.close()
         with TestClient(
             create_app(
                 Settings("a" * 32, "b" * 32, path, {"localhost"}, "tenant"),
@@ -203,6 +213,21 @@ def scenario(count, dimensions=64, rounds=5):
                     "median_ms": statistics.median(samples),
                     "p95_ms": sorted(samples)[math.ceil(len(samples) * 0.95) - 1],
                 }
+            used = request("GET", tenant_root + "/model-usage")["daily_used"]
+            request("PUT", tenant_root + "/model-quota", json={"daily_limit": used + 1})
+            before = len(calls)
+
+            def concurrent_query(_):
+                return client.post(
+                    root + "/vector-search",
+                    headers=admin,
+                    json={"model": "embed", "query": "password"},
+                ).status_code
+
+            with ThreadPoolExecutor(max_workers=4) as pool:
+                statuses = list(pool.map(concurrent_query, range(4)))
+            assert sorted(statuses) == [200, 429, 429, 429] and len(calls) == before + 1
+            report["concurrent_quota_statuses"] = sorted(statuses)
             request("PUT", tenant_root + "/index-quota", json={"daily_limit": 0})
             request("POST", root + "/index-jobs", 429, json={"model": "embed"})
             request("PUT", tenant_root + "/model-quota", json={"daily_limit": 0})

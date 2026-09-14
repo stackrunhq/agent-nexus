@@ -137,3 +137,8 @@ agent-nexus/
 
 - `cli/src/agent_nexus_cli/vector_concurrency.py`：原生并发与 Python 分配测量，复用 `vector_benchmark.py` 的参考比较和清理。
 - `evaluation/results/vector-concurrency-2026-09-14.json`：六组原始结果；`docs/VECTOR_CONCURRENCY.md`：执行与解释。
+# 步骤 38 导航
+
+- `cli/src/agent_nexus_cli/postgres_pipeline.py`：隔离数据库生命周期、RSS/工作集采样和 pgvector 管线运行。
+- `cli/src/agent_nexus_cli/pipeline_benchmark.py`：复用场景及四请求额度竞争。
+- `api/tests/storage/test_benchmark_database_cleanup.py`：创建失败和场景异常时的清理边界。

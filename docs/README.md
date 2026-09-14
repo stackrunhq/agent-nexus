@@ -1,5 +1,7 @@
 # 文档导航
 
+- [PostgreSQL 完整管线基准](POSTGRES_PIPELINE.md)：隔离数据库、并发准入和进程工作集采样。
+
 - [pgvector 并发与内存基准](VECTOR_CONCURRENCY.md)：运行命令、六组实测及 Python 内存范围。
 
 - [软件管线容量基准](PIPELINE_BENCHMARK.md)：运行命令、实测结果、中断注入及适用边界。

@@ -1,0 +1,234 @@
+{
+  "backend": "postgresql_pgvector",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "models": "deterministic_http_mock",
+  "memory_scope": "20ms samples of Python client RSS/working set; excludes parser subprocess and PostgreSQL; not exact peak",
+  "load_scope": "sequential pipeline scenarios; four concurrent API requests compete for one remaining model call",
+  "scenarios": [
+    {
+      "chunks": 16,
+      "characters": 13750,
+      "dimensions": 64,
+      "rounds": 5,
+      "timings": {
+        "upload_ms": 8.237299975007772,
+        "parse_worker_ms": 185.83889998262748,
+        "build_worker_ms": 40.68350000306964,
+        "interrupted_attempt_ms": 16.354600025806576,
+        "resume_worker_ms": 21.06720005394891,
+        "search": {
+          "samples_ms": [
+            3.936499997507781,
+            2.9956999933347106,
+            3.056999994441867,
+            2.931399969384074,
+            3.047299978788942
+          ],
+          "median_ms": 3.047299978788942,
+          "p95_ms": 3.936499997507781
+        },
+        "vector-search": {
+          "samples_ms": [
+            13.964299985673279,
+            12.609100027475506,
+            14.661599998362362,
+            13.318600016646087,
+            13.318500015884638
+          ],
+          "median_ms": 13.318600016646087,
+          "p95_ms": 14.661599998362362
+        },
+        "hybrid-search": {
+          "samples_ms": [
+            24.932800035458058,
+            21.727300016209483,
+            20.55720001226291,
+            22.051500040106475,
+            22.837100026663393
+          ],
+          "median_ms": 22.051500040106475,
+          "p95_ms": 24.932800035458058
+        },
+        "answers": {
+          "samples_ms": [
+            31.333299994003028,
+            32.00260002631694,
+            31.869900005403906,
+            31.54200001154095,
+            31.010599981527776
+          ],
+          "median_ms": 31.54200001154095,
+          "p95_ms": 32.00260002631694
+        }
+      },
+      "initial_embedding_calls": 1,
+      "resumed_embedding_calls": 0,
+      "reused_chunks": 16,
+      "concurrent_quota_statuses": [
+        200,
+        429,
+        429,
+        429
+      ],
+      "quota_blocks_before_model": true,
+      "client_rss_baseline_bytes": 89870336,
+      "client_rss_sampled_peak_bytes": 99643392,
+      "rss_sample_count": 43
+    },
+    {
+      "chunks": 64,
+      "characters": 54550,
+      "dimensions": 64,
+      "rounds": 5,
+      "timings": {
+        "upload_ms": 11.91339996876195,
+        "parse_worker_ms": 211.2968000001274,
+        "build_worker_ms": 97.23890002351254,
+        "interrupted_attempt_ms": 34.809399978257716,
+        "resume_worker_ms": 84.2877000104636,
+        "search": {
+          "samples_ms": [
+            8.270099991932511,
+            8.281199960038066,
+            8.71769996592775,
+            9.710699960123748,
+            7.646099955309182
+          ],
+          "median_ms": 8.281199960038066,
+          "p95_ms": 9.710699960123748
+        },
+        "vector-search": {
+          "samples_ms": [
+            32.19420003006235,
+            22.243999992497265,
+            39.1554000088945,
+            27.44839998194948,
+            22.382299997843802
+          ],
+          "median_ms": 27.44839998194948,
+          "p95_ms": 39.1554000088945
+        },
+        "hybrid-search": {
+          "samples_ms": [
+            52.2997000371106,
+            73.96599999628961,
+            58.37810004595667,
+            41.401299997232854,
+            51.38619994977489
+          ],
+          "median_ms": 52.2997000371106,
+          "p95_ms": 73.96599999628961
+        },
+        "answers": {
+          "samples_ms": [
+            79.00839997455478,
+            75.77660004608333,
+            57.73220001719892,
+            49.20090001542121,
+            40.30669998610392
+          ],
+          "median_ms": 57.73220001719892,
+          "p95_ms": 79.00839997455478
+        }
+      },
+      "initial_embedding_calls": 4,
+      "resumed_embedding_calls": 3,
+      "reused_chunks": 16,
+      "concurrent_quota_statuses": [
+        200,
+        429,
+        429,
+        429
+      ],
+      "quota_blocks_before_model": true,
+      "client_rss_baseline_bytes": 99155968,
+      "client_rss_sampled_peak_bytes": 105533440,
+      "rss_sample_count": 59
+    },
+    {
+      "chunks": 128,
+      "characters": 108950,
+      "dimensions": 64,
+      "rounds": 5,
+      "timings": {
+        "upload_ms": 10.71940001565963,
+        "parse_worker_ms": 194.23680001636967,
+        "build_worker_ms": 209.41969996783882,
+        "interrupted_attempt_ms": 30.91659996425733,
+        "resume_worker_ms": 161.47270001238212,
+        "search": {
+          "samples_ms": [
+            17.008499999064952,
+            13.108199986163527,
+            9.434300009161234,
+            17.579000035766512,
+            22.306700004264712
+          ],
+          "median_ms": 17.008499999064952,
+          "p95_ms": 22.306700004264712
+        },
+        "vector-search": {
+          "samples_ms": [
+            39.2182000214234,
+            41.245399974286556,
+            56.59759999252856,
+            33.272899978328496,
+            38.3367000031285
+          ],
+          "median_ms": 39.2182000214234,
+          "p95_ms": 56.59759999252856
+        },
+        "hybrid-search": {
+          "samples_ms": [
+            79.14399995934218,
+            66.38989999191836,
+            81.05789998080581,
+            60.62959996052086,
+            60.48049998935312
+          ],
+          "median_ms": 66.38989999191836,
+          "p95_ms": 81.05789998080581
+        },
+        "answers": {
+          "samples_ms": [
+            62.18160002026707,
+            84.01089999824762,
+            80.5777000496164,
+            69.2214000155218,
+            53.10950003331527
+          ],
+          "median_ms": 69.2214000155218,
+          "p95_ms": 84.01089999824762
+        }
+      },
+      "initial_embedding_calls": 8,
+      "resumed_embedding_calls": 7,
+      "reused_chunks": 16,
+      "concurrent_quota_statuses": [
+        200,
+        429,
+        429,
+        429
+      ],
+      "quota_blocks_before_model": true,
+      "client_rss_baseline_bytes": 105037824,
+      "client_rss_sampled_peak_bytes": 138584064,
+      "rss_sample_count": 71
+    },
+    {
+      "chunks": 129,
+      "characters": 109800,
+      "dimensions": 64,
+      "rounds": 5,
+      "timings": {
+        "upload_ms": 20.31150000402704,
+        "parse_worker_ms": 226.9718000316061
+      },
+      "capacity_rejected_before_model": true,
+      "client_rss_baseline_bytes": 110764032,
+      "client_rss_sampled_peak_bytes": 113860608,
+      "rss_sample_count": 23
+    }
+  ]
+}
