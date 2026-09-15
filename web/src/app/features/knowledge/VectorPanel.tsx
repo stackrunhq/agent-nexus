@@ -6,10 +6,11 @@ import {AnswerPanel} from './AnswerPanel';
 import {QuotaPanel} from './QuotaPanel';
 import {ModelCallsPanel} from './ModelCallsPanel';
 import {IndexJobProgress, type IndexJob} from './IndexJobProgress';
+import {SchedulerStatus, type Scheduling} from './SchedulerStatus';
 
 interface Model {alias: string; enabled: boolean; capabilities: string[]; deployment: string}
 interface Index {status: 'ready' | 'stale'; dimensions: number; chunks: number}
-interface Usage {daily_limit: number; daily_used: number; reset_at: number; active: number; active_limit: number}
+interface Usage {daily_limit: number; daily_used: number; reset_at: number; active: number; active_limit: number; scheduling?: Scheduling}
 export function VectorPanel({client, root}: {client: AdminClient; root: string}) {
   const [models, setModels] = useState<Model[]>([]);
   const [chatModels, setChatModels] = useState<Model[]>([]);
@@ -86,6 +87,7 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
     <p aria-live="polite">{busy ? '正在处理…' : missing ? '尚未建立索引' : index ? `${index.status === 'ready' ? '索引可用' : '索引已失效，请重建'} · ${index.chunks} 个分片 · ${index.dimensions} 维` : '索引状态未确认'}</p>
     <Button disabled={busy} onClick={() => void run()}>刷新索引状态</Button>
     {usage && <p>今日索引任务 {usage.daily_used}/{usage.daily_limit} · 活跃任务 {usage.active}/{usage.active_limit} · 重置时间 {new Date(usage.reset_at * 1000).toLocaleString()}</p>}
+    {usage?.scheduling && <SchedulerStatus value={usage.scheduling}/>}
     <p>任务状态按需刷新；请启动索引 Worker。相同版本/模型的活跃任务复用，额度按当前企业配置执行。</p>
     {jobs.map(task => <IndexJobProgress key={task.id} task={task}/>)}
     <Button disabled={busy} onClick={() => setConfirm(true)}>建立或重建索引</Button>

@@ -160,3 +160,8 @@ agent-nexus/
 - `api/src/agent_nexus/knowledge/index_scheduler.py`：策略校验、排序和游标推进；`index_jobs.py` 在领取事务内调用。
 - `api/src/agent_nexus/storage/index_scheduler_schema.py` 与 `storage/migrations/versions/0013_index_scheduler.py`：调度表和升级。
 - `api/tests/knowledge/test_index_scheduler.py`：FIFO、轮转、并发、回滚、迁移回归。
+# 步骤 43 导航
+
+- `knowledge/index_jobs.py`：企业 index-usage 的等待/恢复聚合。
+- `web/src/app/features/knowledge/SchedulerStatus.tsx`：统计时间、策略和等待状态展示。
+- `api/tests/knowledge/test_scheduler_status.py` 与 `SchedulerStatus.test.tsx`：隔离、空值及展示回归。

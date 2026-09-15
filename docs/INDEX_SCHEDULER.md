@@ -1,5 +1,18 @@
 # 索引租户轮转调度
 
+## 当前增量：管理端状态（步骤 43，2026-09-15）
+
+管理员 `GET /api/v1/admin/tenants/{tenant_id}/index-usage` 新增 `scheduling` 对象：
+
+- `api_strategy`、`observed_at`：当前 API 进程的配置和统计时间；不代表已经探测 Worker 配置。
+- `queued`、`processing`、`recovery_pending`：本企业所有应用/模型的当前排队数、处理中数、租约到期数。最后一项是 processing 的子集，不能重复加总。
+- `oldest_queued_age_seconds`：最早 queued 任务自创建以来的秒数；无排队任务时为 null。
+- `oldest_recovery_overdue_seconds`：最早过期 processing 租约距到期的秒数；无过期租约时为 null。
+
+完成或失败任务不参与等待指标，不读取手册或向量正文，不暴露其他租户及调度游标。秒数下限为 0；没有任务用 null 区分。指标不提供历史平均/P95、预计完成时间或 Worker 健康判断；恢复等待也不代表必然续建成功，重试耗尽可被标记失败。
+
+管理端“模型选择与索引管理”选定模型后展示本企业全部任务统计，点击“刷新索引状态”重新读取。数据库保持 0013，无新迁移。下一步增加 Worker 心跳与配置一致性观测。
+
 步骤 42（2026-09-15），数据库 **0013**，共 **23 张业务表**。
 
 ## 配置

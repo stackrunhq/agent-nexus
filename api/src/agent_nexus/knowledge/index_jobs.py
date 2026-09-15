@@ -5,7 +5,7 @@ import uuid
 import os
 from contextlib import suppress
 
-from sqlalchemy import select, func, or_, and_
+from sqlalchemy import select, func, or_, and_, case
 from starlette.concurrency import run_in_threadpool
 
 from agent_nexus.core.errors import GatewayError
@@ -31,7 +31,40 @@ class IndexJobs:
 
     def usage(self, tenant):
         with self.database.read() as db:
-            return self._usage(db, tenant)
+            now = int(time.time())
+            usage = self._usage(db, tenant, now)
+            queued = jobs.c.status == "queued"
+            processing = jobs.c.status == "processing"
+            expired = and_(processing, jobs.c.lease_until <= now)
+            row = (
+                db.execute(
+                    select(
+                        func.count(case((queued, 1))).label("queued"),
+                        func.min(case((queued, jobs.c.created_at))).label("oldest_queued"),
+                        func.count(case((processing, 1))).label("processing"),
+                        func.count(case((expired, 1))).label("recovery_pending"),
+                        func.min(case((expired, jobs.c.lease_until))).label("oldest_expired"),
+                    ).where(jobs.c.tenant_id == tenant)
+                )
+                .mappings()
+                .one()
+            )
+            return {
+                **usage,
+                "scheduling": {
+                    "api_strategy": index_scheduler.strategy(),
+                    "observed_at": now,
+                    "queued": row["queued"],
+                    "processing": row["processing"],
+                    "recovery_pending": row["recovery_pending"],
+                    "oldest_queued_age_seconds": max(0, now - row["oldest_queued"])
+                    if row["oldest_queued"] is not None
+                    else None,
+                    "oldest_recovery_overdue_seconds": max(0, now - row["oldest_expired"])
+                    if row["oldest_expired"] is not None
+                    else None,
+                },
+            }
 
     def _usage(self, db, tenant, now=None):
         now = int(time.time()) if now is None else now
