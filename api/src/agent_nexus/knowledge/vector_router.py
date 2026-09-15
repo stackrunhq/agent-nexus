@@ -5,6 +5,7 @@ from .vectors import IndexRequest, VectorSearchRequest, VectorService
 from .answers import AnswerRequest, AnswerService
 from .index_jobs import IndexJobs, validate_submission
 from contextlib import suppress
+from typing import Literal
 
 
 def vector_router(get_store, admin_auth, client_auth):
@@ -36,8 +37,26 @@ def vector_router(get_store, admin_auth, client_auth):
         )
 
     @router.get(admin + "/index-jobs", dependencies=[Depends(admin_auth)])
-    def list_index_jobs(tenant_id: str, app_id: str, version_id: str):
-        return IndexJobs(get_store().database).list(tenant_id, app_id, version_id)
+    def list_index_jobs(
+        tenant_id: str,
+        app_id: str,
+        version_id: str,
+        offset: int = Query(0, ge=0, le=1000000),
+        limit: int = Query(20, ge=1, le=100),
+        model: str | None = Query(None, min_length=1, max_length=200),
+        status: Literal["queued", "processing", "succeeded", "failed"] | None = None,
+        error: str | None = Query(None, max_length=200),
+    ):
+        return IndexJobs(get_store().database).list(
+            tenant_id,
+            app_id,
+            version_id,
+            offset=offset,
+            limit=limit,
+            model=model,
+            status=status,
+            error=error,
+        )
 
     @router.post(admin + "/hybrid-search", dependencies=[Depends(admin_auth)])
     async def hybrid_preview(

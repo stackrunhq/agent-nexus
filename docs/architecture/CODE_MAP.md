@@ -1,6 +1,8 @@
 # 顶层目录与代码导航
 
-索引失败诊断位于 `web/src/app/features/knowledge/`：`indexFailure.ts` 维护错误码与中文建议，`IndexJobList.tsx` 管理筛选，`IndexJobProgress.tsx` 展示单任务诊断，`VectorPanel.tsx` 负责数据加载和提交。见 [诊断说明](../INDEX_FAILURES.md)。
+当前任务历史：`knowledge/vector_router.py` 校验查询参数，`knowledge/index_jobs.py` 执行隔离筛选和分页；前端 `IndexJobHistory.tsx` 管理查询、翻页与请求取消，替代步骤 45 的 `IndexJobList.tsx`。错误说明仍在 `indexFailure.ts`，单任务渲染在 `IndexJobProgress.tsx`。
+
+索引失败诊断位于 `web/src/app/features/knowledge/`：`indexFailure.ts` 维护错误码与中文建议，`IndexJobHistory.tsx` 管理历史筛选，`IndexJobProgress.tsx` 展示单任务诊断，`VectorPanel.tsx` 负责索引状态和提交。见 [诊断说明](../INDEX_FAILURES.md)。
 
 Worker 心跳：`api/src/agent_nexus/knowledge/worker_presence.py` 负责上报和聚合；`storage/worker_presence_schema.py` 与迁移 `0014_worker_presence.py` 定义存储；`cli/src/agent_nexus_cli/worker.py` 管理进程生命周期；`web/src/app/features/knowledge/SchedulerStatus.tsx` 展示状态。详见 [功能说明](../WORKER_HEARTBEAT.md)。
 

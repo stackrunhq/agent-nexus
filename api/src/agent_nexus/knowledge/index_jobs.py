@@ -140,7 +140,25 @@ class IndexJobs:
         with self.database.write("index-queue") as db:
             self.finish(db, task, error)
 
-    def list(self, tenant, app, version):
+    def list(
+        self, tenant, app, version, *, offset=0, limit=20, model=None, status=None, error=None
+    ):
+        conditions = [
+            jobs.c.tenant_id == tenant,
+            jobs.c.app_id == app,
+            jobs.c.version_id == version,
+        ]
+        if model is not None:
+            conditions.append(jobs.c.model == model)
+        if status is not None:
+            conditions.append(jobs.c.status == status)
+        if error is not None:
+            conditions.extend(
+                [
+                    jobs.c.status == "failed",
+                    jobs.c.error == error if error else jobs.c.error.is_(None),
+                ]
+            )
         progress = (
             select(batches.c.job_id, func.count().label("saved_batches"))
             .group_by(batches.c.job_id)
@@ -149,7 +167,22 @@ class IndexJobs:
         now = int(time.time())
         with self.database.read() as db:
             KnowledgeStore.scope(db, tenant, app, version)
+            rows = (
+                db.execute(
+                    select(jobs, progress.c.saved_batches)
+                    .outerjoin(progress, jobs.c.id == progress.c.job_id)
+                    .where(*conditions)
+                    .order_by(jobs.c.created_at.desc(), jobs.c.id)
+                    .offset(offset)
+                    .limit(limit + 1)
+                )
+                .mappings()
+                .all()
+            )
             return {
+                "offset": offset,
+                "limit": limit,
+                "has_more": len(rows) > limit,
                 "data": [
                     {
                         **self.view(row),
@@ -164,18 +197,8 @@ class IndexJobs:
                         if row["status"] == "processing"
                         else "inactive",
                     }
-                    for row in db.execute(
-                        select(jobs, progress.c.saved_batches)
-                        .outerjoin(progress, jobs.c.id == progress.c.job_id)
-                        .where(
-                            jobs.c.tenant_id == tenant,
-                            jobs.c.app_id == app,
-                            jobs.c.version_id == version,
-                        )
-                        .order_by(jobs.c.created_at.desc(), jobs.c.id)
-                        .limit(20)
-                    ).mappings()
-                ]
+                    for row in rows[:limit]
+                ],
             }
 
     def claim(self):

@@ -5,8 +5,7 @@ import {SearchPanel} from './SearchPanel';
 import {AnswerPanel} from './AnswerPanel';
 import {QuotaPanel} from './QuotaPanel';
 import {ModelCallsPanel} from './ModelCallsPanel';
-import {type IndexJob} from './IndexJobProgress';
-import {IndexJobList} from './IndexJobList';
+import {IndexJobHistory} from './IndexJobHistory';
 import {SchedulerStatus, type Scheduling} from './SchedulerStatus';
 
 interface Model {alias: string; enabled: boolean; capabilities: string[]; deployment: string}
@@ -49,7 +48,6 @@ export function VectorPanel({client, root}: {client: AdminClient; root: string})
 }
 
 function ModelIndex({client, root, model, chatModels}: {client: AdminClient; root: string; model: Model; chatModels: Model[]}) {
-  const [jobs, setJobs] = useState<IndexJob[]>([]);
   const [usage, setUsage] = useState<Usage>();
   const [index, setIndex] = useState<Index>();
   const [missing, setMissing] = useState(false);
@@ -61,8 +59,6 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
   async function refresh(signal: AbortSignal) {
     const quota = await client.request<Usage>(`${root.split('/applications/')[0]}/index-usage`, 'GET', undefined, signal);
     if (!signal.aborted) setUsage(quota);
-    const tasks = await client.request<{data: IndexJob[]}>(`${root}/index-jobs`, 'GET', undefined, signal);
-    if (!signal.aborted) setJobs(tasks.data.filter(task => task.model === model.alias));
     try {
       const result = await client.request<Index>(`${root}/vector-index?model=${encodeURIComponent(model.alias)}`, 'GET', undefined, signal);
       if (!signal.aborted) setIndex(result);
@@ -78,7 +74,7 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
     setBusy(true); setError(''); setIndex(undefined); setMissing(false); setRevision(value => value + 1);
     try {
       if (build) await client.request(`${root}/index-jobs`, 'POST', {model: model.alias}, controller.signal);
-      if (!controller.signal.aborted) {setConfirm(false); await refresh(controller.signal);}
+      if (!controller.signal.aborted) {setConfirm(false); await refresh(controller.signal); setRevision(value => value + 1);}
     } catch (e) {if (!controller.signal.aborted) setError((e as Error).message);}
     finally {if (!controller.signal.aborted) {pending.current = null; setBusy(false);}}
   }
@@ -90,7 +86,7 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
     {usage && <p>今日索引任务 {usage.daily_used}/{usage.daily_limit} · 活跃任务 {usage.active}/{usage.active_limit} · 重置时间 {new Date(usage.reset_at * 1000).toLocaleString()}</p>}
     {usage?.scheduling && <SchedulerStatus value={usage.scheduling}/>}
     <p>任务状态按需刷新；请启动索引 Worker。相同版本/模型的活跃任务复用，额度按当前企业配置执行。</p>
-    <IndexJobList jobs={jobs}/>
+    <IndexJobHistory key={`${root}:${model.alias}`} client={client} root={root} model={model.alias} revision={revision}/>
     <Button disabled={busy} onClick={() => setConfirm(true)}>建立或重建索引</Button>
     {index?.status === 'ready' && <SearchPanel key={revision} client={client} root={`${root}/vector-search`} enabled={!busy} model={model.alias}/>}
     {index?.status === 'ready' && <SearchPanel key={`hybrid:${revision}`} client={client} root={`${root}/hybrid-search`} enabled={!busy} model={model.alias} hybrid/>}

@@ -17,7 +17,7 @@ test('filters grants and capabilities, confirms builds and refreshes status', as
     if (path === '/models') return models as never;
     if (path === '/tenants/t/models') return {data:['local','cloud','chat']} as never;
     if (path.endsWith('/index-usage')) return {daily_limit:100,daily_used:0,active:0,active_limit:5,reset_at:86400} as never;
-    if (path.endsWith('/index-jobs') && method !== 'POST') return {data:[]} as never;
+    if (path.includes('/index-jobs?') && method !== 'POST') return {data:[],has_more:false} as never;
     if (method === 'POST') {built = true; return {} as never;}
     if (!built) throw new ApiError('missing', 409, 'index_missing');
     return {status:'ready',dimensions:2,chunks:3} as never;
@@ -44,10 +44,10 @@ test('switching model cancels pending status and hides stale results', async () 
   const view = render(<VectorPanel client={client} root={root}/>);
   await screen.findByText('local · 本地');
   fireEvent.change(screen.getByLabelText('索引模型'), {target:{value:'local'}});
-  await waitFor(() => expect(request).toHaveBeenCalledTimes(3));
-  const signal = request.mock.calls[2][3];
+  await waitFor(() => expect(request.mock.calls.some(call => call[0].endsWith('/index-usage'))).toBe(true));
+  const signals = request.mock.calls.slice(2).map(call => call[3]);
   fireEvent.change(screen.getByLabelText('索引模型'), {target:{value:'cloud'}});
-  expect(signal?.aborted).toBe(true);
+  expect(signals.every(signal => signal?.aborted)).toBe(true);
   view.unmount();
-  expect(request.mock.calls[3][3]?.aborted).toBe(true);
+  expect(request.mock.calls.slice(2).every(call => call[3]?.aborted)).toBe(true);
 });
