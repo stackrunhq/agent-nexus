@@ -166,6 +166,9 @@ class IndexJobs:
                     422, "invalid_index_cursor", "Cursor cannot be combined with offset"
                 )
             created, identifier = index_cursor.decode(cursor, cursor_scope)
+            # Explicit range lets PostgreSQL seek into the descending time index;
+            # the tie-break predicate below still handles equal timestamps.
+            conditions.append(jobs.c.created_at <= created)
             conditions.append(
                 or_(
                     jobs.c.created_at < created,

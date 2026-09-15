@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+历史查询基准：`cli/src/agent_nexus_cli/history_benchmark.py`；生产查询在 `knowledge/index_jobs.py`，原始计划位于 `evaluation/results/history-*.json`。见 [复现说明](../HISTORY_BENCHMARK.md)。
+
 任务游标编解码和查询绑定：`api/src/agent_nexus/knowledge/index_cursor.py`；排序续查在 `index_jobs.py`；查询索引定义在 `storage/index_job_schema.py`，迁移在 `0015_index_history.py`。前端 `IndexJobHistory.tsx` 维护游标栈。
 
 当前任务历史：`knowledge/vector_router.py` 校验查询参数，`knowledge/index_jobs.py` 执行隔离筛选和分页；前端 `IndexJobHistory.tsx` 管理查询、翻页与请求取消，替代步骤 45 的 `IndexJobList.tsx`。错误说明仍在 `indexFailure.ts`，单任务渲染在 `IndexJobProgress.tsx`。

@@ -1,5 +1,7 @@
 # 运维命令
 
+任务历史查询基准：`python -m agent_nexus_cli.history_benchmark --rows 20000 --rounds 5 --output result.json`，测试服务器需 CREATE DATABASE 权限，自动创建并清理独立数据库。详见 [实测说明](../docs/HISTORY_BENCHMARK.md)。
+
 不均衡持续入队：`python -m agent_nexus_cli.shared_queue_benchmark --continuous --waves 30 --output evaluation/results/uneven-queue-local.json`，见 [等待观测](../docs/UNEVEN_QUEUE.md)。
 
 同库队列基准：`python -m agent_nexus_cli.shared_queue_benchmark --output evaluation/results/shared-queue-local.json --waves 10`。在专用服务器创建隔离数据库，对比 1/4 Worker，详见 [同库多租户基准](../docs/SHARED_QUEUE_BENCHMARK.md)。
