@@ -1,5 +1,13 @@
 # 修改日志
 
+## 步骤 42：可配置租户轮转调度（2026-09-15）
+
+- 验证：PostgreSQL 全量 160 passed、0 skipped，定向 8 passed；策略比较 243 项任务成功；Ruff、Compose config、独立 wheel 0013 通过。
+- 新增 NEXUS_INDEX_SCHEDULER=fifo|tenant_round_robin，默认保持 FIFO；轮转按可领取租户排序循环，租户内保持时间/ID 顺序。
+- 0013 增加 knowledge_index_scheduler，共 23 张业务表；游标与领取同事务更新，多个 Worker 共享，失败回滚。
+- API 校验配置，Compose API/index-worker 注入变量；保持租约、重试、检查点和同步构建行为。增加顺序/并发/回滚/升级测试及同负载策略比较。
+- 更新升级、备份、导航和路线图；下一步调度状态及租户等待指标展示。仅本地提交，不推送。
+
 ## 步骤 41：不均衡租户持续入队（2026-09-14）
 
 - shared_queue_benchmark 新增 --continuous，生产者与 Worker 同时运行；高频租户每周期提交 4 版本，其他租户每 5 周期各提交一次。

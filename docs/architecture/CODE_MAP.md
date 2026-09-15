@@ -155,3 +155,8 @@ agent-nexus/
 
 - `cli/src/agent_nexus_cli/shared_queue_benchmark.py`：--continuous 不均衡生产者、共享 Worker 和首次提交等待计时。
 - `evaluation/results/uneven-queue-2026-09-14.json`：最终实测；`docs/UNEVEN_QUEUE.md`：负载设计和公平性判断。
+# 步骤 42 导航
+
+- `api/src/agent_nexus/knowledge/index_scheduler.py`：策略校验、排序和游标推进；`index_jobs.py` 在领取事务内调用。
+- `api/src/agent_nexus/storage/index_scheduler_schema.py` 与 `storage/migrations/versions/0013_index_scheduler.py`：调度表和升级。
+- `api/tests/knowledge/test_index_scheduler.py`：FIFO、轮转、并发、回滚、迁移回归。

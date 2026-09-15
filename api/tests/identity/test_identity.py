@@ -198,7 +198,7 @@ def test_upgrade_old_version_requires_explicit_migration(tmp_path):
         Database(path)
     upgrade(path)
     database = Database(path)
-    assert database.check()["revision"] == "0012"
+    assert database.check()["revision"] == "0013"
     database.close()
 
 

@@ -115,7 +115,7 @@ def main():
             print(json.dumps(check(target)))
         elif args.operation == "upgrade":
             upgrade(target)
-            print("Database upgraded to revision 0012")
+            print("Database upgraded to revision 0013")
         else:
             if not args.source:
                 parser.error("--source is required")

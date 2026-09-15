@@ -238,6 +238,7 @@ def main():
     args.output.write_text(
         json.dumps(
             {
+                "scheduler": os.getenv("NEXUS_INDEX_SCHEDULER", "fifo"),
                 "scope": "one PostgreSQL database per worker-count scenario; concurrent async workers and threaded database calls",
                 "model": "mock 64 dimensions, 5ms async delay; not real model performance",
                 "fairness_scope": "finite measured arrival schedule; no starvation observed is not a scheduling guarantee",

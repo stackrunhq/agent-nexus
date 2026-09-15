@@ -44,3 +44,6 @@ NEXUS_MODEL_DAILY_LIMIT 默认每企业每日 1000 次模型调用；API 与 ind
 # 当前升级要求：0012
 
 备份并停止 API 和全部 Worker 后升级至 0012，再启动服务。新表需要运行账号读写权限，共 22 张业务表。旧格式未完成检查点将被清除；旧任务恢复时从头构建一次，已完成索引保留。见 [升级说明](../docs/INDEX_PROGRESS.md)。以下为历史记录。
+# 当前升级：0013
+
+备份并停止全部写入进程后迁移至 0013，再启动。NEXUS_INDEX_SCHEDULER 默认 fifo，可设置 tenant_round_robin，所有索引 Worker 使用相同配置。运行角色需调度表读写权限。见 [部署说明](../docs/INDEX_SCHEDULER.md)。

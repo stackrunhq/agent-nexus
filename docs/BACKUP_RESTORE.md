@@ -1,5 +1,9 @@
 # PostgreSQL 实库与备份恢复演练
 
+## 0013 调度状态（2026-09-15）
+
+当前 23 张业务表，备份恢复包含 knowledge_index_scheduler；运行账号需该表读写权限。迁移不删除既有索引、任务或检查点，恢复时保留游标。见 [调度说明](INDEX_SCHEDULER.md)。
+
 ## 0012 内容修订与独立批次（2026-09-14）
 
 当前 22 张业务表，备份必须包含 knowledge_content_revisions、knowledge_index_batches；运行角色需新表读写权限。0012 迁移清除旧格式未完成检查点，保留任务和已完成索引；旧任务恢复时可能再次调用模型。见 [索引进度与升级](INDEX_PROGRESS.md)。

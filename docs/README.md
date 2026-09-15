@@ -1,5 +1,7 @@
 # 文档导航
 
+- [索引租户轮转调度](INDEX_SCHEDULER.md)：0013 迁移、策略配置、持久游标和公平性边界。
+
 - [不均衡持续入队](UNEVEN_QUEUE.md)：高低频租户、任务合并与等待观测。
 
 - [同库多租户 Worker 基准](SHARED_QUEUE_BENCHMARK.md)：多轮竞争、去重、租户完成量与公平性边界。

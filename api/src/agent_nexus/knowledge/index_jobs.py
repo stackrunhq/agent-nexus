@@ -14,6 +14,7 @@ from .vectors import VectorService, MAX_INDEX_CHUNKS
 from agent_nexus.tenants.quotas import policy
 from .index_checkpoints import IndexCheckpoint, clear, batches
 from .store import KnowledgeStore
+from . import index_scheduler
 
 jobs = metadata.tables["knowledge_index_jobs"]
 
@@ -143,6 +144,7 @@ class IndexJobs:
             }
 
     def claim(self):
+        mode = index_scheduler.strategy()
         now = int(time.time())
         with self.database.write("index-queue") as db:
             expired = and_(jobs.c.status == "processing", jobs.c.lease_until <= now)
@@ -156,7 +158,7 @@ class IndexJobs:
                 db.execute(
                     select(jobs)
                     .where(or_(jobs.c.status == "queued", expired))
-                    .order_by(jobs.c.created_at, jobs.c.id)
+                    .order_by(*index_scheduler.order(db, jobs, mode))
                     .limit(1)
                 )
                 .mappings()
@@ -172,6 +174,8 @@ class IndexJobs:
                 "lease_until": now + 300,
             }
             db.execute(jobs.update().where(jobs.c.id == task["id"]).values(**task))
+            if mode == "tenant_round_robin":
+                index_scheduler.advance(db, task["tenant_id"])
             return task
 
     def finish(self, db, task, error=None):

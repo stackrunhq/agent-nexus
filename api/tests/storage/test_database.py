@@ -38,7 +38,7 @@ def test_upgrade_new_and_legacy_sqlite(tmp_path):
     upgrade(path)
     database = Database(path)
     with database.read() as db:
-        assert run(db, "SELECT version_num FROM alembic_version").scalar_one() == "0012"
+        assert run(db, "SELECT version_num FROM alembic_version").scalar_one() == "0013"
     assert ModelStore(database).get("local") == model
     assert TenantStore(database).authenticate(tenant["api_key"]) == tenant["id"]
     database.close()
@@ -75,6 +75,7 @@ def test_copy_preserves_source_credentials_and_events(tmp_path):
         "knowledge_index_checkpoints": 0,
         "knowledge_content_revisions": 0,
         "knowledge_index_batches": 0,
+        "knowledge_index_scheduler": 0,
     }
     database = Database(dst)
     assert ModelStore(database).get("local") == model
@@ -153,7 +154,7 @@ def test_diagnostics_report_revision_without_parsing_model_data(tmp_path):
     assert check(path) == {"status": "ok", "backend": "sqlite", "revision": "unversioned"}
     assert hashlib.sha256((tmp_path / "db.sqlite").read_bytes()).digest() == before
     upgrade(path)
-    assert check(path)["revision"] == "0012"
+    assert check(path)["revision"] == "0013"
 
 
 def test_readiness_detects_missing_table_and_recovers(tmp_path):
