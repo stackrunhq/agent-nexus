@@ -187,17 +187,19 @@ class IndexJobs:
                 ]
             )
         progress = (
-            select(batches.c.job_id, func.count().label("saved_batches"))
-            .group_by(batches.c.job_id)
-            .subquery()
+            select(func.count())
+            .select_from(batches)
+            .where(batches.c.job_id == jobs.c.id)
+            .correlate(jobs)
+            .scalar_subquery()
+            .label("saved_batches")
         )
         now = int(time.time())
         with self.database.read() as db:
             KnowledgeStore.scope(db, tenant, app, version)
             rows = (
                 db.execute(
-                    select(jobs, progress.c.saved_batches)
-                    .outerjoin(progress, jobs.c.id == progress.c.job_id)
+                    select(jobs, progress)
                     .where(*conditions)
                     .order_by(jobs.c.created_at.desc(), jobs.c.id)
                     .offset(offset)

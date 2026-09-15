@@ -67,7 +67,7 @@ def benchmark(target, count=20000, rounds=5):
             def capture(conn, cursor, statement, parameters, context, executemany):
                 if (
                     statement.startswith("SELECT")
-                    and "LEFT OUTER JOIN" in statement
+                    and "knowledge_index_batches" in statement
                     and "knowledge_index_jobs" in statement
                 ):
                     captured.append((statement, parameters))

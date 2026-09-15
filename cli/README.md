@@ -1,5 +1,7 @@
 # 运维命令
 
+多租户检查点历史基准：`python -m agent_nexus_cli.history_concurrency --rows 2000 --rounds 10 --output result.json`，见 [运行范围](../docs/HISTORY_CONCURRENCY.md)。
+
 任务历史查询基准：`python -m agent_nexus_cli.history_benchmark --rows 20000 --rounds 5 --output result.json`，测试服务器需 CREATE DATABASE 权限，自动创建并清理独立数据库。详见 [实测说明](../docs/HISTORY_BENCHMARK.md)。
 
 不均衡持续入队：`python -m agent_nexus_cli.shared_queue_benchmark --continuous --waves 30 --output evaluation/results/uneven-queue-local.json`，见 [等待观测](../docs/UNEVEN_QUEUE.md)。

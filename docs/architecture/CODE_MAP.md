@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+多租户历史并发基准位于 `cli/src/agent_nexus_cli/history_concurrency.py`；`knowledge/index_jobs.py` 用批次主键统计每条候选任务的检查点。见 [计划与结果](../HISTORY_CONCURRENCY.md)。
+
 历史查询基准：`cli/src/agent_nexus_cli/history_benchmark.py`；生产查询在 `knowledge/index_jobs.py`，原始计划位于 `evaluation/results/history-*.json`。见 [复现说明](../HISTORY_BENCHMARK.md)。
 
 任务游标编解码和查询绑定：`api/src/agent_nexus/knowledge/index_cursor.py`；排序续查在 `index_jobs.py`；查询索引定义在 `storage/index_job_schema.py`，迁移在 `0015_index_history.py`。前端 `IndexJobHistory.tsx` 维护游标栈。
