@@ -5,7 +5,8 @@ import {SearchPanel} from './SearchPanel';
 import {AnswerPanel} from './AnswerPanel';
 import {QuotaPanel} from './QuotaPanel';
 import {ModelCallsPanel} from './ModelCallsPanel';
-import {IndexJobProgress, type IndexJob} from './IndexJobProgress';
+import {type IndexJob} from './IndexJobProgress';
+import {IndexJobList} from './IndexJobList';
 import {SchedulerStatus, type Scheduling} from './SchedulerStatus';
 
 interface Model {alias: string; enabled: boolean; capabilities: string[]; deployment: string}
@@ -89,7 +90,7 @@ function ModelIndex({client, root, model, chatModels}: {client: AdminClient; roo
     {usage && <p>今日索引任务 {usage.daily_used}/{usage.daily_limit} · 活跃任务 {usage.active}/{usage.active_limit} · 重置时间 {new Date(usage.reset_at * 1000).toLocaleString()}</p>}
     {usage?.scheduling && <SchedulerStatus value={usage.scheduling}/>}
     <p>任务状态按需刷新；请启动索引 Worker。相同版本/模型的活跃任务复用，额度按当前企业配置执行。</p>
-    {jobs.map(task => <IndexJobProgress key={task.id} task={task}/>)}
+    <IndexJobList jobs={jobs}/>
     <Button disabled={busy} onClick={() => setConfirm(true)}>建立或重建索引</Button>
     {index?.status === 'ready' && <SearchPanel key={revision} client={client} root={`${root}/vector-search`} enabled={!busy} model={model.alias}/>}
     {index?.status === 'ready' && <SearchPanel key={`hybrid:${revision}`} client={client} root={`${root}/hybrid-search`} enabled={!busy} model={model.alias} hybrid/>}

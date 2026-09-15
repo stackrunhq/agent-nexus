@@ -1,3 +1,5 @@
+import {indexFailure} from './indexFailure';
+
 export interface IndexJob {
   id: string; model: string; status: string; attempts: number; error: string | null;
   saved_batches?: number;
@@ -15,6 +17,9 @@ export function IndexJobProgress({task}: {task: IndexJob}) {
       <p>检查点数量不是完成百分比；索引仍需最终校验和保存。</p>
     </>}
     {task.status === 'succeeded' && <p>索引已提交，临时检查点已清理。</p>}
-    {task.status === 'failed' && <p>任务已终止；可重新提交，旧索引保留。</p>}
+    {task.status === 'failed' && <>
+      <p>失败原因：{indexFailure(task.error).reason}。处理建议：{indexFailure(task.error).suggestion}</p>
+      <p>任务已终止，旧索引保留；保留不代表仍然可用。处理原因后通过“建立或重建索引”重新提交，新任务仍受额度限制。</p>
+    </>}
   </div>;
 }

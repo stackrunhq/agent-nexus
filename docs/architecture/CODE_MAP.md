@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+索引失败诊断位于 `web/src/app/features/knowledge/`：`indexFailure.ts` 维护错误码与中文建议，`IndexJobList.tsx` 管理筛选，`IndexJobProgress.tsx` 展示单任务诊断，`VectorPanel.tsx` 负责数据加载和提交。见 [诊断说明](../INDEX_FAILURES.md)。
+
 Worker 心跳：`api/src/agent_nexus/knowledge/worker_presence.py` 负责上报和聚合；`storage/worker_presence_schema.py` 与迁移 `0014_worker_presence.py` 定义存储；`cli/src/agent_nexus_cli/worker.py` 管理进程生命周期；`web/src/app/features/knowledge/SchedulerStatus.tsx` 展示状态。详见 [功能说明](../WORKER_HEARTBEAT.md)。
 
 采用模块化单体：顶层按交付职责分区，后端内部按业务功能组织。目前一个 Python 安装包包含 API、CLI 和页面资源，原生与 Docker 使用相同构建产物。
