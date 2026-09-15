@@ -1,6 +1,6 @@
 # Agent Nexus
 
-后台索引支持独立 Worker、批次恢复和可配置租户轮转；升级须迁移至 **0013**，默认仍为 FIFO。见 [调度与升级](docs/INDEX_SCHEDULER.md)。
+后台索引支持独立 Worker、批次恢复、租户轮转及 Worker 心跳与策略一致性观测；升级须迁移至 **0014**，默认仍为 FIFO。见 [心跳与升级](docs/WORKER_HEARTBEAT.md)。
 
 面向企业应用的知识库、使用指导与流程规划中台，按阶段实现。
 

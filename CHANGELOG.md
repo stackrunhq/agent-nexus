@@ -1,5 +1,13 @@
 # 修改日志
 
+## 步骤 44：索引 Worker 心跳和策略一致性（2026-09-15）
+
+- 索引 Worker 每 10 秒上报，30 秒有效；正常退出清理，异常中断留下过期观测，上报失败停止领取。
+- 管理端展示共享 Worker 的近期、过期、策略不一致数量，区分未知与一致；不将心跳等同任务健康。
+- 0014 新增 knowledge_index_workers，共 24 张业务表；更新迁移、备份、代码导航和使用说明。
+- 验证：原生 PostgreSQL/pgvector 全量 165 passed、0 skipped，前端 28 passed，Ruff、TypeScript/Vite、独立 wheel 0014 与实际 Worker 启停通过。
+- 下一步完善索引失败诊断和处理建议。仅本地提交，不推送。
+
 ## 步骤 43：管理端调度配置与租户等待指标（2026-09-15）
 
 - 验证：后端定向 8 passed，前端全量 27 passed，Ruff、TypeScript/Vite 和 Git 空白检查通过。

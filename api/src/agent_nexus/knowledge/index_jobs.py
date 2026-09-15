@@ -15,6 +15,7 @@ from agent_nexus.tenants.quotas import policy
 from .index_checkpoints import IndexCheckpoint, clear, batches
 from .store import KnowledgeStore
 from . import index_scheduler
+from .worker_presence import summary as worker_summary
 
 jobs = metadata.tables["knowledge_index_jobs"]
 
@@ -53,6 +54,7 @@ class IndexJobs:
                 **usage,
                 "scheduling": {
                     "api_strategy": index_scheduler.strategy(),
+                    "workers": worker_summary(db, now, index_scheduler.strategy()),
                     "observed_at": now,
                     "queued": row["queued"],
                     "processing": row["processing"],

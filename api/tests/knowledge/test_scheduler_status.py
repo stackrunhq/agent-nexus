@@ -33,6 +33,13 @@ def test_tenant_queue_metrics_time_boundaries_and_auth(scope, monkeypatch):
     value = client.get(root, headers=ADMIN).json()["scheduling"]
     assert value == {
         "api_strategy": "tenant_round_robin",
+        "workers": {
+            "recent": 0,
+            "stale": 0,
+            "mismatched": 0,
+            "ttl_seconds": 30,
+            "status": "unknown",
+        },
         "observed_at": now,
         "queued": 1,
         "processing": 2,

@@ -1,5 +1,7 @@
 # 索引租户轮转调度
 
+当前步骤 44 已增加 [Worker 心跳与策略一致性观测](WORKER_HEARTBEAT.md)，数据库升级至 0014，共 24 张业务表。下述步骤 42/43 为历史记录；当前接口额外返回 `scheduling.workers`。
+
 ## 当前增量：管理端状态（步骤 43，2026-09-15）
 
 管理员 `GET /api/v1/admin/tenants/{tenant_id}/index-usage` 新增 `scheduling` 对象：

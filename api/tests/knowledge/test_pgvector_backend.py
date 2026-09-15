@@ -98,6 +98,7 @@ def test_native_api_matches_portable_and_honors_withdrawal(scope, monkeypatch):
         legacy = create_engine(target)
         try:
             with legacy.begin() as db:
+                db.execute(text("DROP TABLE knowledge_index_workers"))
                 db.execute(text("DROP TABLE knowledge_index_scheduler"))
                 db.execute(text("DROP TABLE knowledge_index_batches"))
                 db.execute(text("DROP TABLE knowledge_content_revisions"))

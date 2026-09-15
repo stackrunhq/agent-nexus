@@ -48,10 +48,16 @@ async def index_loop(database, once):
     from agent_nexus.models.gateway import Gateway
     from agent_nexus.models.store import ModelStore
     from agent_nexus.knowledge.index_jobs import run_once as run_index
+    from agent_nexus.knowledge.worker_presence import heartbeat
 
-    async with httpx.AsyncClient(follow_redirects=False, trust_env=False) as client:
+    async with (
+        heartbeat(database) as pulse,
+        httpx.AsyncClient(follow_redirects=False, trust_env=False) as client,
+    ):
         gateway = Gateway(ModelStore(database), client, Settings.from_env().allowed_hosts)
         while True:
+            if pulse.done():
+                pulse.result()
             worked = await run_index(database, gateway)
             if once:
                 return
