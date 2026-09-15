@@ -9,14 +9,14 @@ import statistics
 from threading import Barrier
 import time
 
-from sqlalchemy import event, text
+from sqlalchemy import create_engine, event, text
 from agent_nexus.storage.database import Database, metadata
 from agent_nexus.knowledge.index_jobs import IndexJobs, jobs
 from agent_nexus_cli.database import upgrade
 from agent_nexus_cli.postgres_pipeline import disposable_database
 
 
-def benchmark(target, rows=2000, rounds=10):
+def benchmark(target, rows=2000, rounds=10, mixed_writes=False):
     if not 100 <= rows <= 20000 or not 1 <= rounds <= 100:
         raise ValueError("rows 100..20000 per tenant; rounds 1..100")
     with disposable_database(target) as url:
@@ -145,7 +145,16 @@ def benchmark(target, rows=2000, rounds=10):
                         samples_ms=samples,
                     )
                 )
+            from agent_nexus_cli.history_read_write import mixed
+
+            if mixed_writes:
+                database.engine.dispose()
+                database.engine = create_engine(
+                    url, hide_parameters=True, pool_size=2, max_overflow=0, pool_timeout=5
+                )
+            mixed_result = mixed(database, rows, rounds) if mixed_writes else None
             return dict(
+                mixed=mixed_result,
                 server=server,
                 tenants=4,
                 rows_per_tenant=rows,
@@ -166,11 +175,12 @@ def main():
     parser.add_argument("--rows", type=int, default=2000)
     parser.add_argument("--rounds", type=int, default=10)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--mixed-writes", action="store_true")
     args = parser.parse_args()
     target = os.environ.get("NEXUS_TEST_POSTGRES_URL")
     if not target:
         parser.error("Set NEXUS_TEST_POSTGRES_URL to a disposable test server")
-    result = benchmark(target, args.rows, args.rounds)
+    result = benchmark(target, args.rows, args.rounds, args.mixed_writes)
     args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print("Concurrent history checks passed; disposable database removed")
 

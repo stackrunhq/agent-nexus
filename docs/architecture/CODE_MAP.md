@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+检查点混合读写场景：`cli/src/agent_nexus_cli/history_read_write.py`；由 `history_concurrency.py --mixed-writes` 调用，复用生产检查点保存和任务完成方法，限池设置仅用于基准。
+
 多租户历史并发基准位于 `cli/src/agent_nexus_cli/history_concurrency.py`；`knowledge/index_jobs.py` 用批次主键统计每条候选任务的检查点。见 [计划与结果](../HISTORY_CONCURRENCY.md)。
 
 历史查询基准：`cli/src/agent_nexus_cli/history_benchmark.py`；生产查询在 `knowledge/index_jobs.py`，原始计划位于 `evaluation/results/history-*.json`。见 [复现说明](../HISTORY_BENCHMARK.md)。

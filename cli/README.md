@@ -1,5 +1,7 @@
 # 运维命令
 
+检查点读写竞争：在 `history_concurrency` 命令追加 `--mixed-writes`，使用隔离数据库执行四读一写、两连接池基准。详见 [运行说明](../docs/HISTORY_READ_WRITE.md)。
+
 多租户检查点历史基准：`python -m agent_nexus_cli.history_concurrency --rows 2000 --rounds 10 --output result.json`，见 [运行范围](../docs/HISTORY_CONCURRENCY.md)。
 
 任务历史查询基准：`python -m agent_nexus_cli.history_benchmark --rows 20000 --rounds 5 --output result.json`，测试服务器需 CREATE DATABASE 权限，自动创建并清理独立数据库。详见 [实测说明](../docs/HISTORY_BENCHMARK.md)。
