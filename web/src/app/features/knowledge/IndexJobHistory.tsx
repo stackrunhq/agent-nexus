@@ -1,10 +1,12 @@
 import {useEffect, useState} from 'react';
 import {AdminClient} from '../../shared/client';
 import {IndexJobProgress, type IndexJob} from './IndexJobProgress';
+import {IndexJobDetails} from './IndexJobDetails';
 
 export function IndexJobHistory({client, root, model, revision}: {client: AdminClient; root: string; model: string; revision: number}) {
   const [query, setQuery] = useState({cursors:[] as string[], status:'', error:'', missing:false});
   const [draft, setDraft] = useState('');
+  const [selected,setSelected]=useState<string>();
   const [page, setPage] = useState<{data: IndexJob[]; has_more: boolean; next_cursor?: string | null}>();
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
@@ -35,9 +37,10 @@ export function IndexJobHistory({client, root, model, revision}: {client: AdminC
     <button onClick={() => {setQuery(value => ({...value,cursors:[] as string[]})); setRefresh(value => value + 1);}}>刷新任务历史</button>
     {error ? <p role="alert">{error}</p> : !page ? <p>正在加载任务历史…</p> : <>
       {!page.data.length && <p>没有符合条件的任务。</p>}
-      {page.data.map(task => <IndexJobProgress key={task.id} task={task}/>)}
+      {page.data.map(task => <div key={task.id}><IndexJobProgress task={task}/><button onClick={()=>setSelected(task.id)}>查看任务 {task.id} 详情</button></div>)}
     </>}
     <button disabled={!page || query.cursors.length === 0} onClick={() => setQuery(value => ({...value,cursors:value.cursors.slice(0,-1)}))}>上一页</button>
     <button disabled={!page?.next_cursor} onClick={() => setQuery(value => ({...value,cursors:[...value.cursors,page!.next_cursor!]}))}>下一页</button>
+    {selected && <><button onClick={()=>setSelected(undefined)}>关闭任务详情</button><IndexJobDetails key={selected} client={client} root={root} id={selected}/></>}
   </section>;
 }

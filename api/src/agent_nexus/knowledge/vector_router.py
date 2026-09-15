@@ -68,6 +68,19 @@ def vector_router(get_store, admin_auth, client_auth):
             tenant_id, app_id, version_id, body, request.state.request_id
         )
 
+    @router.get(admin + "/index-jobs/{job_id}", dependencies=[Depends(admin_auth)])
+    def index_job_detail(
+        tenant_id: str,
+        app_id: str,
+        version_id: str,
+        job_id: str,
+        offset: int = Query(0, ge=0, le=100000),
+        limit: int = Query(20, ge=1, le=100),
+    ):
+        from .index_details import detail
+
+        return detail(get_store().database, tenant_id, app_id, version_id, job_id, offset, limit)
+
     @router.post(admin + "/answers", dependencies=[Depends(admin_auth)])
     async def answer_preview(
         tenant_id: str, app_id: str, version_id: str, body: AnswerRequest, request: Request
