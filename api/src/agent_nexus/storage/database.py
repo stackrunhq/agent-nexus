@@ -131,14 +131,14 @@ class Database:
                     with self.write("schema") as db:
                         if inspect(db).has_table("alembic_version") and (
                             run(db, "SELECT version_num FROM alembic_version").scalar_one()
-                            != "0014"
+                            != "0015"
                         ):
                             raise RuntimeError("Run the explicit schema upgrade first")
                         metadata.create_all(db)
                 else:
                     with self.read() as db:
                         revision = run(db, "SELECT version_num FROM alembic_version").scalar_one()
-                        if revision != "0014":
+                        if revision != "0015":
                             raise RuntimeError("Database schema is not at the supported revision")
             except Exception:
                 self.engine.dispose()
@@ -158,7 +158,7 @@ class Database:
                 db.execute(select(table).limit(0)).close()
             if inspect(db).has_table("alembic_version"):
                 revision = run(db, "SELECT version_num FROM alembic_version").scalar_one()
-                if revision != "0014":
+                if revision != "0015":
                     raise RuntimeError("Unsupported schema revision")
             elif self.sqlite:
                 revision = "unversioned"

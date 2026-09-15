@@ -1,5 +1,7 @@
 # 容器部署
 
+当前版本 **0015**：维护窗口停止 API 和 Worker 后迁移，再启动；新增任务查询索引，仍为 24 表。见 [升级说明](../docs/INDEX_CURSOR.md)。下文旧版要求为历史记录。
+
 **当前必须升级至 0014（24 张业务表）**。备份并停止 API 与全部 Worker，使用迁移账号执行 `python -m agent_nexus_cli.database upgrade`，再启动。运行角色需心跳表读写权限；所有 API/索引 Worker 统一调度策略并同步时钟。见 [心跳部署说明](../docs/WORKER_HEARTBEAT.md)。下文保留历史升级记录。
 
 **已有 0001/0002/0003/0004/0005 数据库须先备份并升级到 0010。** SQLite：暂停 API 和 Worker 后执行 `docker compose --project-directory . -f docker/compose.yaml run --rm --build api python -m agent_nexus.db_cli upgrade`，再启动 API 和 Worker；PostgreSQL 使用覆盖配置执行 migrate 服务，见 DATABASE.md。

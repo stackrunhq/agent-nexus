@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+任务游标编解码和查询绑定：`api/src/agent_nexus/knowledge/index_cursor.py`；排序续查在 `index_jobs.py`；查询索引定义在 `storage/index_job_schema.py`，迁移在 `0015_index_history.py`。前端 `IndexJobHistory.tsx` 维护游标栈。
+
 当前任务历史：`knowledge/vector_router.py` 校验查询参数，`knowledge/index_jobs.py` 执行隔离筛选和分页；前端 `IndexJobHistory.tsx` 管理查询、翻页与请求取消，替代步骤 45 的 `IndexJobList.tsx`。错误说明仍在 `indexFailure.ts`，单任务渲染在 `IndexJobProgress.tsx`。
 
 索引失败诊断位于 `web/src/app/features/knowledge/`：`indexFailure.ts` 维护错误码与中文建议，`IndexJobHistory.tsx` 管理历史筛选，`IndexJobProgress.tsx` 展示单任务诊断，`VectorPanel.tsx` 负责索引状态和提交。见 [诊断说明](../INDEX_FAILURES.md)。

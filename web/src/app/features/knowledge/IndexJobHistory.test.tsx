@@ -7,13 +7,13 @@ afterEach(() => {cleanup(); vi.restoreAllMocks();});
 
 test('queries server pages and resets offset when filters change', async () => {
   const client = new AdminClient();
-  const request = vi.spyOn(client, 'request').mockResolvedValue({data:[],has_more:true} as never);
+  const request = vi.spyOn(client, 'request').mockResolvedValue({data:[],has_more:true,next_cursor:'next-token'} as never);
   render(<IndexJobHistory client={client} root="/v" model="local & cloud" revision={0}/>);
   await screen.findByText('没有符合条件的任务。');
   fireEvent.click(screen.getByText('下一页'));
-  await waitFor(() => expect(request.mock.calls.at(-1)?.[0]).toContain('offset=20'));
+  await waitFor(() => expect(request.mock.calls.at(-1)?.[0]).toContain('cursor=next-token'));
   fireEvent.change(screen.getByLabelText('任务状态'), {target:{value:'failed'}});
-  await waitFor(() => expect(request.mock.calls.at(-1)?.[0]).toContain('offset=0'));
+  await waitFor(() => expect(request.mock.calls.at(-1)?.[0]).not.toContain('cursor='));
   fireEvent.change(screen.getByLabelText('失败错误码'), {target:{value:'provider_timeout'}});
   fireEvent.click(screen.getByText('按错误码查询'));
   await waitFor(() => expect(request.mock.calls.at(-1)?.[0]).toContain('error=provider_timeout'));

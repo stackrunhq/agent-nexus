@@ -1,5 +1,7 @@
 # PostgreSQL 实库与备份恢复演练
 
+当前版本 0015，24 表；备份恢复包含 `ix_index_history_scope`、`ix_index_history_model` 两项任务索引。见 [当前升级](INDEX_CURSOR.md)。
+
 ## 当前 0014（2026-09-15）
 
 备份恢复须包含全部 24 张业务表，新增 `knowledge_index_workers`，运行角色需读写权限。恢复的心跳时间可能在 30 秒内仍显示近期，不证明旧进程存活；重启 Worker 将注册新实例。见 [心跳与升级](WORKER_HEARTBEAT.md)。下文为历史记录。

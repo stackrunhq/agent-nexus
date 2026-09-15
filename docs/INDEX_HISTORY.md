@@ -1,5 +1,7 @@
 # 索引任务历史查询
 
+当前步骤 47 已增加 [游标分页与 0015 查询索引](INDEX_CURSOR.md)，页面使用游标翻页；offset 仍供旧客户端兼容。以下为步骤 46 接口基础说明。
+
 步骤 46（2026-09-15），数据库保持 0014。
 
 管理员接口：`GET /api/v1/admin/tenants/{tenant_id}/applications/{app_id}/versions/{version_id}/index-jobs`。

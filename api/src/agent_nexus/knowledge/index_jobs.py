@@ -16,6 +16,7 @@ from .index_checkpoints import IndexCheckpoint, clear, batches
 from .store import KnowledgeStore
 from . import index_scheduler
 from .worker_presence import summary as worker_summary
+from . import index_cursor
 
 jobs = metadata.tables["knowledge_index_jobs"]
 
@@ -141,13 +142,36 @@ class IndexJobs:
             self.finish(db, task, error)
 
     def list(
-        self, tenant, app, version, *, offset=0, limit=20, model=None, status=None, error=None
+        self,
+        tenant,
+        app,
+        version,
+        *,
+        offset=0,
+        limit=20,
+        model=None,
+        status=None,
+        error=None,
+        cursor=None,
     ):
         conditions = [
             jobs.c.tenant_id == tenant,
             jobs.c.app_id == app,
             jobs.c.version_id == version,
         ]
+        cursor_scope = index_cursor.scope_key(tenant, app, version, model, status, error)
+        if cursor is not None:
+            if offset:
+                raise GatewayError(
+                    422, "invalid_index_cursor", "Cursor cannot be combined with offset"
+                )
+            created, identifier = index_cursor.decode(cursor, cursor_scope)
+            conditions.append(
+                or_(
+                    jobs.c.created_at < created,
+                    and_(jobs.c.created_at == created, jobs.c.id > identifier),
+                )
+            )
         if model is not None:
             conditions.append(jobs.c.model == model)
         if status is not None:
@@ -183,6 +207,9 @@ class IndexJobs:
                 "offset": offset,
                 "limit": limit,
                 "has_more": len(rows) > limit,
+                "next_cursor": index_cursor.encode(rows[limit - 1], cursor_scope)
+                if len(rows) > limit
+                else None,
                 "data": [
                     {
                         **self.view(row),

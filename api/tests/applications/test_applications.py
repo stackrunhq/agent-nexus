@@ -139,7 +139,7 @@ def test_old_0002_upgrade_and_bootstrap_has_no_application_scope(tmp_path):
         Database(path)
     upgrade(path)
     database = Database(path)
-    assert database.check()["revision"] == "0014"
+    assert database.check()["revision"] == "0015"
     database.close()
     with TestClient(create_app(Settings("a" * 32, "b" * 32, path, {"localhost"}))) as client:
         assert (

@@ -46,6 +46,7 @@ def vector_router(get_store, admin_auth, client_auth):
         model: str | None = Query(None, min_length=1, max_length=200),
         status: Literal["queued", "processing", "succeeded", "failed"] | None = None,
         error: str | None = Query(None, max_length=200),
+        cursor: str | None = Query(None, min_length=1, max_length=1024),
     ):
         return IndexJobs(get_store().database).list(
             tenant_id,
@@ -56,6 +57,7 @@ def vector_router(get_store, admin_auth, client_auth):
             model=model,
             status=status,
             error=error,
+            cursor=cursor,
         )
 
     @router.post(admin + "/hybrid-search", dependencies=[Depends(admin_auth)])
