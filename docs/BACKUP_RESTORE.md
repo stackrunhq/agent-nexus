@@ -1,5 +1,7 @@
 # PostgreSQL 实库与备份恢复演练
 
+当前 0016，24 表；备份恢复包含 model_calls.index_job_id 和 ix_model_calls_tenant_job 索引。旧记录保留空值，不回填归属。见 [当前升级](CALL_TASK_LINK.md)。
+
 当前版本 0015，24 表；备份恢复包含 `ix_index_history_scope`、`ix_index_history_model` 两项任务索引。见 [当前升级](INDEX_CURSOR.md)。
 
 ## 当前 0014（2026-09-15）

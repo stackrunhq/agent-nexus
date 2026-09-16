@@ -149,6 +149,7 @@ def vector_router(get_store, admin_auth, client_auth):
                 request.state.actor,
                 request.state.request_id,
                 on_save=lambda db: store.finish(db, task),
+                index_job_id=task["id"],
             )
         except Exception as exc:
             with suppress(GatewayError):

@@ -97,13 +97,17 @@ class Gateway:
     async def chat_config(self, config, request: ChatRequest, request_id: str, tenant_id=None):
         return await self.metered(config, request, request_id, tenant_id, "chat", self._chat_config)
 
-    async def metered(self, config, request, request_id, tenant_id, capability, invoke):
+    async def metered(
+        self, config, request, request_id, tenant_id, capability, invoke, index_job_id=None
+    ):
         if tenant_id is None:
             return await invoke(config, request, request_id)
         from .usage import UsageStore
 
         store = UsageStore(self.store.database)
-        identifier = await run_in_threadpool(store.start, tenant_id, config, capability, request_id)
+        identifier = await run_in_threadpool(
+            store.start, tenant_id, config, capability, request_id, index_job_id
+        )
         started = time.monotonic()
         try:
             result = await invoke(config, request, request_id)
@@ -181,10 +185,10 @@ class Gateway:
         return await self.embed_config(config, request, request_id, tenant_id=tenant_id)
 
     async def embed_config(
-        self, config, request: EmbeddingRequest, request_id: str, tenant_id=None
+        self, config, request: EmbeddingRequest, request_id: str, tenant_id=None, index_job_id=None
     ):
         return await self.metered(
-            config, request, request_id, tenant_id, "embeddings", self._embed_config
+            config, request, request_id, tenant_id, "embeddings", self._embed_config, index_job_id
         )
 
     async def _embed_config(self, config, request: EmbeddingRequest, request_id: str):

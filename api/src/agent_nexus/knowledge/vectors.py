@@ -150,7 +150,16 @@ class VectorService:
         }
 
     async def build(
-        self, tenant, app, version, model, actor, request_id, on_save=None, checkpoint=None
+        self,
+        tenant,
+        app,
+        version,
+        model,
+        actor,
+        request_id,
+        on_save=None,
+        checkpoint=None,
+        index_job_id=None,
     ):
         native = pgvector_backend.enabled(self.database)
         if native:
@@ -186,7 +195,11 @@ class VectorService:
                     batch = rows[start : start + 16]
                     request = EmbeddingRequest(model=model, input=[row["text"] for row in batch])
                     result = await self.gateway.embed_config(
-                        config, request, request_id, tenant_id=tenant
+                        config,
+                        request,
+                        request_id,
+                        tenant_id=tenant,
+                        **({"index_job_id": index_job_id} if index_job_id else {}),
                     )
                     if dimensions is not None and result.dimensions != dimensions:
                         raise GatewayError(

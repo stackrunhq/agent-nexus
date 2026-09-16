@@ -162,7 +162,7 @@ def test_backup_restore_data_auth_api_and_sequences(tmp_path):
         assert archive.stat().st_size > 0
         restored = Database(urls[1])
         databases.append(restored)
-        assert restored.check()["revision"] == "0015"
+        assert restored.check()["revision"] == "0016"
         assert IdentityStore(restored).authenticate(member_token)["id"] == member["id"]
         with restored.read() as connection:
             for table in metadata.sorted_tables:

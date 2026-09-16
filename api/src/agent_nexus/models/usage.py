@@ -60,10 +60,24 @@ class UsageStore:
             )
             return self.policy(db, tenant)
 
-    def start(self, tenant, config, capability, request_id):
+    def start(self, tenant, config, capability, request_id, index_job_id=None):
         identifier = str(uuid4())
         with self.database.write("model-usage:" + tenant) as db:
             TenantStore.require(db, tenant)
+            if index_job_id is not None:
+                jobs = metadata.tables["knowledge_index_jobs"]
+                if (
+                    capability != "embeddings"
+                    or db.execute(
+                        select(jobs.c.id).where(
+                            jobs.c.id == index_job_id,
+                            jobs.c.tenant_id == tenant,
+                            jobs.c.model == config.alias,
+                        )
+                    ).first()
+                    is None
+                ):
+                    raise GatewayError(422, "invalid_index_job", "Invalid index task association")
             now = int(time.time())
             usage = self._summary(db, tenant, now)
             if usage["daily_used"] >= usage["daily_limit"]:
@@ -77,6 +91,7 @@ class UsageStore:
                     id=identifier,
                     tenant_id=tenant,
                     request_id=request_id,
+                    index_job_id=index_job_id,
                     model=config.alias,
                     model_fingerprint=ModelStore.etag(config),
                     capability=capability,
