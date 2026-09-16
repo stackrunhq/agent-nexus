@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+调用诊断导出：`knowledge/index_export.py` 复用详情并封装范围元信息，`vector_router.py` 提供管理员接口；`IndexCallExport.tsx` 管理下载与取消，`IndexJobDetails.tsx` 传入当前生效筛选。
+
 调用错误码：`knowledge/vector_router.py` 校验 call_error，`index_details.py` 筛选；`index_call_summary.py` 聚合 failure_reasons；前端 `IndexAttemptSummary.tsx` 展示原因和定位按钮，`IndexJobDetails.tsx` 管理错误码条件。
 
 调用筛选：`knowledge/vector_router.py` 校验 attempt/call_status，`index_details.py` 在分页前过滤；`IndexJobDetails.tsx` 管理条件和分页重置，`IndexAttemptSummary.tsx` 提供汇总定位按钮。

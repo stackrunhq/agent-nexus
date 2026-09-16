@@ -95,6 +95,29 @@ def vector_router(get_store, admin_auth, client_auth):
             call_error,
         )
 
+    @router.get(admin + "/index-jobs/{job_id}/export", dependencies=[Depends(admin_auth)])
+    def export_index_calls(
+        tenant_id: str,
+        app_id: str,
+        version_id: str,
+        job_id: str,
+        attempt: Literal["1", "2", "3", "unknown"] | None = None,
+        call_status: Literal["pending", "succeeded", "failed"] | None = None,
+        call_error: str | None = Query(None, max_length=200),
+    ):
+        from .index_export import export
+
+        return export(
+            get_store().database,
+            tenant_id,
+            app_id,
+            version_id,
+            job_id,
+            attempt,
+            call_status,
+            call_error,
+        )
+
     @router.post(admin + "/answers", dependencies=[Depends(admin_auth)])
     async def answer_preview(
         tenant_id: str, app_id: str, version_id: str, body: AnswerRequest, request: Request
