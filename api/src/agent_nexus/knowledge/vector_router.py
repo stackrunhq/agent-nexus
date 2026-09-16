@@ -22,10 +22,14 @@ def vector_router(get_store, admin_auth, client_auth):
         version_id: str,
         before: int | None = Query(None, ge=1),
         limit: int = Query(20, ge=1, le=100),
+        job_id: str | None = Query(None, min_length=1, max_length=200),
+        actor: str | None = Query(None, min_length=1, max_length=200),
     ):
         from .export_audit import list_exports
 
-        return list_exports(get_store().database, tenant_id, app_id, version_id, before, limit)
+        return list_exports(
+            get_store().database, tenant_id, app_id, version_id, before, limit, job_id, actor
+        )
 
     @router.get("/api/v1/admin/tenants/{tenant_id}/index-usage", dependencies=[Depends(admin_auth)])
     def index_usage(tenant_id: str):

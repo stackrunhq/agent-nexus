@@ -23,3 +23,17 @@ test('closing cancels pending audit request',()=>{
  fireEvent.click(screen.getByText('关闭导出审计'));
  expect(request.mock.calls[0][3]?.aborted).toBe(true);
 });
+test('applies exact filters, resets cursor and continues empty scan pages',async()=>{
+ const client=new AdminClient();const request=vi.spyOn(client,'request').mockResolvedValue({data:[],next_cursor:42} as never);
+ render(<IndexExportAudit client={client} root="/version"/>);
+ fireEvent.click(screen.getByText('查看版本导出审计'));
+ await screen.findByText('本段没有匹配记录，请继续查看更早记录。');
+ fireEvent.click(screen.getByText('更早的导出记录'));
+ await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).toContain('before=42'));
+ fireEvent.change(screen.getByLabelText('审计任务 ID'),{target:{value:'job & 1'}});
+ fireEvent.change(screen.getByLabelText('审计操作者'),{target:{value:'admin'}});
+ fireEvent.click(screen.getByText('筛选导出审计'));
+ await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).toBe('/version/index-export-events?limit=20&job_id=job+%26+1&actor=admin'));
+ fireEvent.click(screen.getByText('清除审计筛选'));
+ await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).toBe('/version/index-export-events?limit=20'));
+});

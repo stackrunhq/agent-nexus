@@ -80,6 +80,16 @@ def test_export_limit_filters_metadata_and_scope(scope):
     assert len(page["data"]) == 2 and page["next_cursor"]
     assert page["data"][0]["export"]["returned"] == 0
     assert page["data"][1]["filters"]["call_error"] == ""
+    selected = client.get(
+        audit_path,
+        headers=ADMIN,
+        params={"job_id": task["id"], "actor": "platform_admin", "limit": 1},
+    ).json()
+    assert len(selected["data"]) == 1 and selected["next_cursor"]
+    assert selected["filters"]["job_id"] == task["id"]
+    assert client.get(audit_path, headers=ADMIN, params={"actor": "platform"}).json()["data"] == []
+    assert client.get(audit_path, headers=ADMIN, params={"job_id": "missing"}).json()["data"] == []
+    assert client.get(audit_path, headers=ADMIN, params={"actor": ""}).status_code == 422
     older = client.get(audit_path, headers=ADMIN, params={"before": page["next_cursor"]}).json()
     assert len(older["data"]) == 1 and older["next_cursor"] is None
     assert older["data"][0]["export"]["truncated"] is True
@@ -108,6 +118,38 @@ def test_export_limit_filters_metadata_and_scope(scope):
         ).status_code
         == 404
     )
+
+
+def test_audit_task_scan_continues_after_empty_segment(scope):
+    client, tenants, app, version, root, _ = scope
+    database = client.app.state.knowledge.database
+    task = IndexJobs(database).enqueue(
+        tenants[0]["id"], app["id"], version["id"], "local", "actor", "req"
+    )
+    client.get(root + "/index-jobs/" + task["id"] + "/export", headers=ADMIN)
+    with database.write("test") as db:
+        db.execute(
+            metadata.tables["application_events"].insert(),
+            [
+                dict(
+                    application_id=app["id"],
+                    version_id=version["id"],
+                    actor="platform_admin",
+                    request_id="bad",
+                    action="index_calls_exported:{bad",
+                    created_at=1,
+                )
+                for _ in range(1001)
+            ],
+        )
+    path = root + "/index-export-events"
+    first = client.get(path, headers=ADMIN, params={"job_id": task["id"]}).json()
+    assert first["data"] == [] and first["scanned"] == 1000 and first["next_cursor"]
+    second = client.get(
+        path, headers=ADMIN, params={"job_id": task["id"], "before": first["next_cursor"]}
+    ).json()
+    assert len(second["data"]) == 1 and second["next_cursor"] is None
+    assert second["data"][0]["resource"]["job_id"] == task["id"]
 
 
 def test_export_audit_failure_prevents_success(scope, monkeypatch):
@@ -173,5 +215,14 @@ def test_export_postgres(scope):
                 database, task["tenant_id"], task["app_id"], task["version_id"], limit=1
             )
             assert page["data"][0]["actor"] == "pg-actor" and page["next_cursor"]
+            selected = list_exports(
+                database,
+                task["tenant_id"],
+                task["app_id"],
+                task["version_id"],
+                job_id=task["id"],
+                actor="pg-actor",
+            )
+            assert len(selected["data"]) == 1 and selected["next_cursor"] is None
         finally:
             database.close()

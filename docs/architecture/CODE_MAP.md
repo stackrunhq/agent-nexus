@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+审计筛选：`knowledge/export_audit.py` SQL 精确过滤 actor、限量解析 job_id 并按最后检查事件续查；`IndexExportAudit.tsx` 区分草稿/生效条件并重置游标。解析上限和空段继续测试位于 `test_index_export.py`。
+
 审计查询与展示：`knowledge/export_audit.py` 按版本查询并校验事件载荷，`vector_router.py` 校验查询参数；`IndexExportAudit.tsx` 负责按需加载、游标翻页和取消，入口在 `IndexJobDetails.tsx`。
 
 导出审计：`knowledge/index_export.py::record_export` 保存白名单范围与结果到应用事件；`vector_router.py` 从认证状态取得身份并在响应前写入；`applications/store.py::events` 提供现有查询。失败回滚与 PostgreSQL 验证位于 `tests/knowledge/test_index_export.py`。
