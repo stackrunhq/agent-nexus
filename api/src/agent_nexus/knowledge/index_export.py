@@ -1,9 +1,33 @@
 """Bounded diagnostic JSON; deliberately excludes prompts and provider configuration."""
 
 import time
+import json
+from agent_nexus.applications.store import ApplicationStore
 from .index_details import detail
 
 EXPORT_LIMIT = 1000
+
+
+def record_export(database, result, actor, request_id):
+    """Persist generation, not delivery; failures must prevent a successful response."""
+    resource = result["resource"]
+    payload = {
+        "format_version": 1,
+        "resource": resource,
+        "filters": result["filters"],
+        "export": result["export"],
+        "outcome": "generated",
+    }
+    with database.write("application:" + resource["app_id"]) as db:
+        ApplicationStore.application(db, resource["tenant_id"], resource["app_id"])
+        ApplicationStore.record(
+            db,
+            resource["app_id"],
+            actor,
+            request_id,
+            "index_calls_exported:" + json.dumps(payload, ensure_ascii=True, separators=(",", ":")),
+            resource["version_id"],
+        )
 
 
 def export(

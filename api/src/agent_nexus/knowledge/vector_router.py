@@ -97,6 +97,7 @@ def vector_router(get_store, admin_auth, client_auth):
 
     @router.get(admin + "/index-jobs/{job_id}/export", dependencies=[Depends(admin_auth)])
     def export_index_calls(
+        request: Request,
         tenant_id: str,
         app_id: str,
         version_id: str,
@@ -105,10 +106,11 @@ def vector_router(get_store, admin_auth, client_auth):
         call_status: Literal["pending", "succeeded", "failed"] | None = None,
         call_error: str | None = Query(None, max_length=200),
     ):
-        from .index_export import export
+        from .index_export import export, record_export
 
-        return export(
-            get_store().database,
+        database = get_store().database
+        result = export(
+            database,
             tenant_id,
             app_id,
             version_id,
@@ -117,6 +119,8 @@ def vector_router(get_store, admin_auth, client_auth):
             call_status,
             call_error,
         )
+        record_export(database, result, request.state.actor, request.state.request_id)
+        return result
 
     @router.post(admin + "/answers", dependencies=[Depends(admin_auth)])
     async def answer_preview(

@@ -1,4 +1,5 @@
 import os
+import json
 import pytest
 from sqlalchemy import select
 from agent_nexus.knowledge.index_jobs import IndexJobs, jobs
@@ -33,7 +34,20 @@ def test_export_limit_filters_metadata_and_scope(scope):
             ],
         )
     path = root + "/index-jobs/" + task["id"] + "/export"
-    result = client.get(path, headers=ADMIN).json()
+    response = client.get(path, headers=ADMIN)
+    result = response.json()
+    events_path = root.split("/versions/")[0] + "/events"
+    events = client.get(events_path, headers=ADMIN).json()["data"]
+    event = events[0]
+    assert event["actor"] == "platform_admin"
+    assert event["request_id"] == response.headers["X-Request-ID"]
+    assert event["version_id"] == version["id"]
+    payload = json.loads(event["action"].split(":", 1)[1])
+    assert payload["resource"] == result["resource"]
+    assert payload["filters"] == result["filters"]
+    assert payload["export"] == result["export"]
+    assert payload["outcome"] == "generated"
+    assert "secret-marker" not in str(event)
     assert result["export"] == {"limit": 1000, "returned": 1000, "truncated": True, "starts_at": 0}
     assert result["summary"]["attempts"][0]["calls"] == 1001
     assert result["resource"]["job_id"] == task["id"]
@@ -55,6 +69,43 @@ def test_export_limit_filters_metadata_and_scope(scope):
         == 404
     )
     assert client.get(path, headers=ADMIN, params={"attempt": "4"}).status_code == 422
+    exports = [
+        e
+        for e in client.get(events_path, headers=ADMIN).json()["data"]
+        if e["action"].startswith("index_calls_exported:")
+    ]
+    assert len(exports) == 3
+    assert json.loads(exports[1]["action"].split(":", 1)[1])["filters"]["call_error"] == ""
+    assert client.get(events_path).status_code == 401
+    assert (
+        client.get(
+            events_path.replace(tenants[0]["id"], tenants[1]["id"]), headers=ADMIN
+        ).status_code
+        == 404
+    )
+
+
+def test_export_audit_failure_prevents_success(scope, monkeypatch):
+    from agent_nexus.applications.store import ApplicationStore
+    from sqlalchemy.exc import OperationalError
+
+    client, tenants, app, version, root, _ = scope
+    database = client.app.state.knowledge.database
+    task = IndexJobs(database).enqueue(
+        tenants[0]["id"], app["id"], version["id"], "local", "actor", "req"
+    )
+    original = ApplicationStore.record
+
+    def fail(db, *args):
+        original(db, *args)
+        raise OperationalError("audit unavailable", {}, Exception("failure"))
+
+    monkeypatch.setattr(ApplicationStore, "record", staticmethod(fail))
+    response = client.get(root + "/index-jobs/" + task["id"] + "/export", headers=ADMIN)
+    assert response.status_code >= 500
+    with database.read() as db:
+        actions = db.execute(select(metadata.tables["application_events"].c.action)).scalars().all()
+    assert not any(action.startswith("index_calls_exported:") for action in actions)
 
 
 @pytest.mark.skipif(not os.getenv("NEXUS_TEST_POSTGRES_URL"), reason="Requires test PostgreSQL")
@@ -62,7 +113,7 @@ def test_export_postgres(scope):
     from agent_nexus_cli.postgres_pipeline import disposable_database
     from agent_nexus_cli.database import upgrade, import_sqlite
     from agent_nexus.storage.database import Database
-    from agent_nexus.knowledge.index_export import export
+    from agent_nexus.knowledge.index_export import export, record_export
 
     test_export_limit_filters_metadata_and_scope(scope)
     with disposable_database(os.environ["NEXUS_TEST_POSTGRES_URL"]) as url:
@@ -85,5 +136,11 @@ def test_export_postgres(scope):
                 call_error="",
             )
             assert filtered["export"]["returned"] == 1 and filtered["summary"] == result["summary"]
+            record_export(database, filtered, "pg-actor", "pg-export-request")
+            from agent_nexus.applications.store import ApplicationStore
+
+            event = ApplicationStore(database).events(task["tenant_id"], task["app_id"])[0]
+            assert event["actor"] == "pg-actor" and event["request_id"] == "pg-export-request"
+            assert json.loads(event["action"].split(":", 1)[1])["export"] == filtered["export"]
         finally:
             database.close()
