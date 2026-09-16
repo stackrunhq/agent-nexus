@@ -75,6 +75,31 @@ def test_export_limit_filters_metadata_and_scope(scope):
         if e["action"].startswith("index_calls_exported:")
     ]
     assert len(exports) == 3
+    audit_path = root + "/index-export-events"
+    page = client.get(audit_path, headers=ADMIN, params={"limit": 2}).json()
+    assert len(page["data"]) == 2 and page["next_cursor"]
+    assert page["data"][0]["export"]["returned"] == 0
+    assert page["data"][1]["filters"]["call_error"] == ""
+    older = client.get(audit_path, headers=ADMIN, params={"before": page["next_cursor"]}).json()
+    assert len(older["data"]) == 1 and older["next_cursor"] is None
+    assert older["data"][0]["export"]["truncated"] is True
+    assert "action" not in older["data"][0]
+    assert client.get(audit_path).status_code == 401
+    assert client.get(audit_path, headers=ADMIN, params={"limit": 101}).status_code == 422
+    assert (
+        client.get(
+            audit_path.replace(tenants[0]["id"], tenants[1]["id"]), headers=ADMIN
+        ).status_code
+        == 404
+    )
+    with database.write("test") as db:
+        from agent_nexus.applications.store import ApplicationStore
+
+        ApplicationStore.record(
+            db, app["id"], "actor", "bad-record", "index_calls_exported:{bad", version["id"]
+        )
+    broken = client.get(audit_path, headers=ADMIN).json()["data"][0]
+    assert broken["readable"] is False and "filters" not in broken
     assert json.loads(exports[1]["action"].split(":", 1)[1])["filters"]["call_error"] == ""
     assert client.get(events_path).status_code == 401
     assert (
@@ -142,5 +167,11 @@ def test_export_postgres(scope):
             event = ApplicationStore(database).events(task["tenant_id"], task["app_id"])[0]
             assert event["actor"] == "pg-actor" and event["request_id"] == "pg-export-request"
             assert json.loads(event["action"].split(":", 1)[1])["export"] == filtered["export"]
+            from agent_nexus.knowledge.export_audit import list_exports
+
+            page = list_exports(
+                database, task["tenant_id"], task["app_id"], task["version_id"], limit=1
+            )
+            assert page["data"][0]["actor"] == "pg-actor" and page["next_cursor"]
         finally:
             database.close()

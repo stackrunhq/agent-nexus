@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+审计查询与展示：`knowledge/export_audit.py` 按版本查询并校验事件载荷，`vector_router.py` 校验查询参数；`IndexExportAudit.tsx` 负责按需加载、游标翻页和取消，入口在 `IndexJobDetails.tsx`。
+
 导出审计：`knowledge/index_export.py::record_export` 保存白名单范围与结果到应用事件；`vector_router.py` 从认证状态取得身份并在响应前写入；`applications/store.py::events` 提供现有查询。失败回滚与 PostgreSQL 验证位于 `tests/knowledge/test_index_export.py`。
 
 调用诊断导出：`knowledge/index_export.py` 复用详情并封装范围元信息，`vector_router.py` 提供管理员接口；`IndexCallExport.tsx` 管理下载与取消，`IndexJobDetails.tsx` 传入当前生效筛选。

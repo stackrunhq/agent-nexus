@@ -15,6 +15,18 @@ def vector_router(get_store, admin_auth, client_auth):
     def service(request):
         return VectorService(get_store().database, request.app.state.gateway)
 
+    @router.get(admin + "/index-export-events", dependencies=[Depends(admin_auth)])
+    def export_events(
+        tenant_id: str,
+        app_id: str,
+        version_id: str,
+        before: int | None = Query(None, ge=1),
+        limit: int = Query(20, ge=1, le=100),
+    ):
+        from .export_audit import list_exports
+
+        return list_exports(get_store().database, tenant_id, app_id, version_id, before, limit)
+
     @router.get("/api/v1/admin/tenants/{tenant_id}/index-usage", dependencies=[Depends(admin_auth)])
     def index_usage(tenant_id: str):
         return IndexJobs(get_store().database).usage(tenant_id)

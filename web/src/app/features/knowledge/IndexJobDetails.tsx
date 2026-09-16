@@ -4,6 +4,7 @@ import {type IndexJob} from './IndexJobProgress';
 import {indexFailure} from './indexFailure';
 import {IndexAttemptSummary, type AttemptSummary} from './IndexAttemptSummary';
 import {IndexCallExport} from './IndexCallExport';
+import {IndexExportAudit} from './IndexExportAudit';
 interface Call {id:string; status:string; error:string|null; elapsed_ms:number|null; input_tokens:number|null; output_tokens:number|null; association?:'exact'|'request_match';index_attempt?:number|null;index_batch_start?:number|null;index_batch_size?:number|null}
 interface Detail {task:IndexJob & {request_id:string}; calls:{data:Call[];has_more:boolean};summary?:AttemptSummary}
 export function IndexJobDetails({client, root, id}: {client:AdminClient;root:string;id:string}) {
@@ -45,6 +46,7 @@ export function IndexJobDetails({client, root, id}: {client:AdminClient;root:str
     <button onClick={()=>{setAttempt('');setCallStatus('');setCallError(null);setErrorDraft('');setOffset(0);}}>清除调用筛选</button>
     <p>明细按上述条件查询；选定尝试时仅显示精确关联记录。汇总始终覆盖全任务，不随筛选变化。</p>
     <IndexCallExport key={exportPath} client={client} path={exportPath}/>
+    <IndexExportAudit key={root} client={client} root={root}/>
     {error ? <p role="alert">{error}</p> : !value ? <p>正在加载详情…</p> : <>
       <p>任务 {value.task.id} · {value.task.status} · 尝试 {value.task.attempts} 次</p><p>请求 ID：{value.task.request_id}</p>
       {value.task.status==='failed' && <p>{value.task.error} · {indexFailure(value.task.error).suggestion}</p>}

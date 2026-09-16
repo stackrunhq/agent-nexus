@@ -1,6 +1,6 @@
 # 文档导航
 
-- [调用诊断导出](INDEX_CALL_EXPORT.md)：JSON 下载、筛选范围、1000 条上限与未知值。
+- [调用诊断导出](INDEX_CALL_EXPORT.md)：JSON 下载、范围上限、导出审计接口与管理页面。
 
 - [调用错误码与失败统计](INDEX_CALL_ERRORS.md)：精确错误码查询、缺失值与分组定位。
 
