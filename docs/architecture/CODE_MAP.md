@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+调用错误码：`knowledge/vector_router.py` 校验 call_error，`index_details.py` 筛选；`index_call_summary.py` 聚合 failure_reasons；前端 `IndexAttemptSummary.tsx` 展示原因和定位按钮，`IndexJobDetails.tsx` 管理错误码条件。
+
 调用筛选：`knowledge/vector_router.py` 校验 attempt/call_status，`index_details.py` 在分页前过滤；`IndexJobDetails.tsx` 管理条件和分页重置，`IndexAttemptSummary.tsx` 提供汇总定位按钮。
 
 按尝试汇总：`api/src/agent_nexus/knowledge/index_call_summary.py` 执行全任务精确聚合，`index_details.py` 返回；`web/src/app/features/knowledge/IndexAttemptSummary.tsx` 展示，详情组件接入。测试包含 SQLite 与原生 PostgreSQL。

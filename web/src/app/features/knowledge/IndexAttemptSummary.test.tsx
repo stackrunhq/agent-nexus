@@ -19,4 +19,9 @@ test('distinguishes zero, unknown usage and unconfirmed attribution',()=>{
  expect(select).toHaveBeenCalledWith(2,'failed');
  fireEvent.click(screen.getByText('查看本次调用'));
  expect(select).toHaveBeenCalledWith(2,'');
+ const onError=vi.fn();
+ rerender(<IndexAttemptSummary value={{...value,failure_reasons:[{attempt:2,error:null,calls:1}]}} onError={onError}/>);
+ expect(screen.getByText(/缺失错误码 · 1 次/)).toBeTruthy();
+ fireEvent.click(screen.getByText('查看此类失败'));
+ expect(onError).toHaveBeenCalledWith(2,null);
 });

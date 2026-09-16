@@ -24,6 +24,11 @@ test('shows unknown usage and pages correlated calls',async()=>{
  fireEvent.click(screen.getByText('清除调用筛选'));
  await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).not.toContain('attempt='));
  expect(request.mock.calls.at(-1)?.[0]).not.toContain('call_status=');
+ fireEvent.change(screen.getByLabelText('调用错误码'),{target:{value:'provider_timeout'}});
+ fireEvent.click(screen.getByText('筛选调用错误码'));
+ await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).toContain('call_error=provider_timeout'));
+ fireEvent.click(screen.getByText('仅缺失调用错误码'));
+ await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).toMatch(/call_error=$/));
 });
 test('unmount cancels detail request',()=>{
  const client=new AdminClient();

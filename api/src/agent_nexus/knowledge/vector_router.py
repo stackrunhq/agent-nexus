@@ -78,6 +78,7 @@ def vector_router(get_store, admin_auth, client_auth):
         limit: int = Query(20, ge=1, le=100),
         attempt: Literal["1", "2", "3", "unknown"] | None = None,
         call_status: Literal["pending", "succeeded", "failed"] | None = None,
+        call_error: str | None = Query(None, max_length=200),
     ):
         from .index_details import detail
 
@@ -91,6 +92,7 @@ def vector_router(get_store, admin_auth, client_auth):
             limit,
             attempt,
             call_status,
+            call_error,
         )
 
     @router.post(admin + "/answers", dependencies=[Depends(admin_auth)])

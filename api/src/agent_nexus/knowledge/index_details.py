@@ -9,7 +9,16 @@ from .index_call_summary import summarize
 
 
 def detail(
-    database, tenant, app, version, identifier, offset=0, limit=20, attempt=None, call_status=None
+    database,
+    tenant,
+    app,
+    version,
+    identifier,
+    offset=0,
+    limit=20,
+    attempt=None,
+    call_status=None,
+    call_error=None,
 ):
     calls = metadata.tables["model_calls"]
     with database.read() as db:
@@ -40,6 +49,13 @@ def detail(
             )
         if call_status is not None:
             filters.append(calls.c.status == call_status)
+        if call_error is not None:
+            filters.extend(
+                [
+                    calls.c.status == "failed",
+                    calls.c.error == call_error if call_error else calls.c.error.is_(None),
+                ]
+            )
         fields = [
             "id",
             "request_id",

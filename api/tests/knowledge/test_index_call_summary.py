@@ -38,6 +38,23 @@ def test_attempt_summary_is_unpaged_and_excludes_unconfirmed_and_other_scope(sco
     second = client.get(path, headers=ADMIN, params={"limit": 1, "offset": 20}).json()
     assert first["summary"] == second["summary"]
     summary = first["summary"]
+    assert summary["failure_reasons"] == [{"attempt": 2, "error": None, "calls": 1}]
+    null_error = client.get(path, headers=ADMIN, params={"call_error": ""}).json()
+    assert [row["id"] for row in null_error["calls"]["data"]] == ["20"]
+    assert null_error["summary"] == summary
+    assert (
+        client.get(path, headers=ADMIN, params={"call_error": "missing-code"}).json()["calls"][
+            "data"
+        ]
+        == []
+    )
+    assert (
+        client.get(
+            path, headers=ADMIN, params={"call_error": "", "call_status": "succeeded"}
+        ).json()["calls"]["data"]
+        == []
+    )
+    assert client.get(path, headers=ADMIN, params={"call_error": "x" * 201}).status_code == 422
     filtered = client.get(
         path, headers=ADMIN, params={"attempt": "2", "call_status": "failed", "limit": 1}
     ).json()
@@ -123,5 +140,34 @@ def test_attempt_summary_postgres(scope):
             )
             assert [row["id"] for row in filtered["calls"]["data"]] == ["20"]
             assert filtered["summary"] == result
+            assert result["failure_reasons"] == [{"attempt": 2, "error": None, "calls": 1}]
+            null_error = detail(
+                database,
+                task["tenant_id"],
+                task["app_id"],
+                task["version_id"],
+                task["id"],
+                call_error="",
+            )
+            assert [row["id"] for row in null_error["calls"]["data"]] == ["20"]
+            with database.write("test") as db:
+                db.execute(
+                    metadata.tables["model_calls"]
+                    .update()
+                    .where(metadata.tables["model_calls"].c.id == "20")
+                    .values(error="provider_timeout")
+                )
+            coded = detail(
+                database,
+                task["tenant_id"],
+                task["app_id"],
+                task["version_id"],
+                task["id"],
+                call_error="provider_timeout",
+            )
+            assert [row["id"] for row in coded["calls"]["data"]] == ["20"]
+            assert coded["summary"]["failure_reasons"] == [
+                {"attempt": 2, "error": "provider_timeout", "calls": 1}
+            ]
         finally:
             database.close()

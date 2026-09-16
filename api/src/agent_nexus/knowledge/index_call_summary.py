@@ -38,6 +38,21 @@ def summarize(db, tenant, task):
         .where(*scope, calls.c.index_job_id.is_(None), calls.c.request_id == task["request_id"])
     ).scalar_one()
     return {
+        "failure_reasons": [
+            dict(row)
+            for row in db.execute(
+                select(
+                    calls.c.index_attempt.label("attempt"),
+                    calls.c.error,
+                    func.count().label("calls"),
+                )
+                .where(*scope, calls.c.index_job_id == task["id"], calls.c.status == "failed")
+                .group_by(calls.c.index_attempt, calls.c.error)
+                .order_by(
+                    calls.c.index_attempt.asc().nulls_last(), calls.c.error.asc().nulls_last()
+                )
+            ).mappings()
+        ],
         "attempts": attempts,
         "unconfirmed_request_calls": unmatched,
         "scope": "all_exact_task_calls",
