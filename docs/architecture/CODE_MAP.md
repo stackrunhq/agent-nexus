@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+按尝试汇总：`api/src/agent_nexus/knowledge/index_call_summary.py` 执行全任务精确聚合，`index_details.py` 返回；`web/src/app/features/knowledge/IndexAttemptSummary.tsx` 展示，详情组件接入。测试包含 SQLite 与原生 PostgreSQL。
+
 调用尝试/批次：`knowledge/vectors.py` 记录实际调用位置，`index_jobs.py`/`vector_router.py` 传领取尝试快照，`models/usage.py` 校验并落库；迁移 `0017_call_batch.py`，详情 `IndexJobDetails.tsx` 展示分片区间。
 
 调用任务关联：`knowledge/index_jobs.py` 与 `vector_router.py` 传任务 ID，经 `vectors.py`、`models/gateway.py` 至 `models/usage.py` 校验写账本；`knowledge/index_details.py` 区分 exact/request_match；存储迁移为 `0016_call_task.py`。

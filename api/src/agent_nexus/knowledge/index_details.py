@@ -5,6 +5,7 @@ from agent_nexus.core.errors import GatewayError
 from agent_nexus.storage.database import metadata
 from .index_jobs import jobs, IndexJobs
 from .store import KnowledgeStore
+from .index_call_summary import summarize
 
 
 def detail(database, tenant, app, version, identifier, offset=0, limit=20):
@@ -63,6 +64,7 @@ def detail(database, tenant, app, version, identifier, offset=0, limit=20):
             .all()
         )
         return {
+            "summary": summarize(db, tenant, task),
             "task": {**IndexJobs.view(task), "request_id": task["request_id"]},
             "calls": {
                 "data": [

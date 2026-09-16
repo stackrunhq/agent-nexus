@@ -2,8 +2,9 @@ import {useEffect, useState} from 'react';
 import {AdminClient} from '../../shared/client';
 import {type IndexJob} from './IndexJobProgress';
 import {indexFailure} from './indexFailure';
+import {IndexAttemptSummary, type AttemptSummary} from './IndexAttemptSummary';
 interface Call {id:string; status:string; error:string|null; elapsed_ms:number|null; input_tokens:number|null; output_tokens:number|null; association?:'exact'|'request_match';index_attempt?:number|null;index_batch_start?:number|null;index_batch_size?:number|null}
-interface Detail {task:IndexJob & {request_id:string}; calls:{data:Call[];has_more:boolean}}
+interface Detail {task:IndexJob & {request_id:string}; calls:{data:Call[];has_more:boolean};summary?:AttemptSummary}
 export function IndexJobDetails({client, root, id}: {client:AdminClient;root:string;id:string}) {
   const [offset,setOffset]=useState(0);
   const [revision,setRevision]=useState(0);
@@ -23,6 +24,7 @@ export function IndexJobDetails({client, root, id}: {client:AdminClient;root:str
     {error ? <p role="alert">{error}</p> : !value ? <p>正在加载详情…</p> : <>
       <p>任务 {value.task.id} · {value.task.status} · 尝试 {value.task.attempts} 次</p><p>请求 ID：{value.task.request_id}</p>
       {value.task.status==='failed' && <p>{value.task.error} · {indexFailure(value.task.error).suggestion}</p>}
+      {value.summary && <IndexAttemptSummary value={value.summary}/>}
       {!value.calls.data.length && <p>没有匹配的调用记录。</p>}
       {value.calls.data.map(call=><article key={call.id}>
         <p>调用 {call.id} · {call.status} · {call.association==='exact' ? '精确任务关联' : '请求匹配（归属未确认）'}{call.error ? ` · ${call.error}` : ''}</p>
