@@ -17,6 +17,13 @@ test('shows unknown usage and pages correlated calls',async()=>{
  expect(screen.getByText('尝试与批次位置未知')).toBeTruthy();
  fireEvent.click(screen.getByText('下一页关联调用'));
  await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).toContain('offset=20'));
+ fireEvent.change(screen.getByLabelText('调用尝试'),{target:{value:'2'}});
+ await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).toContain('offset=0&limit=20&attempt=2'));
+ fireEvent.change(screen.getByLabelText('调用状态'),{target:{value:'failed'}});
+ await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).toContain('call_status=failed'));
+ fireEvent.click(screen.getByText('清除调用筛选'));
+ await waitFor(()=>expect(request.mock.calls.at(-1)?.[0]).not.toContain('attempt='));
+ expect(request.mock.calls.at(-1)?.[0]).not.toContain('call_status=');
 });
 test('unmount cancels detail request',()=>{
  const client=new AdminClient();

@@ -1,5 +1,7 @@
 # 文档导航
 
+- [调用明细筛选](INDEX_CALL_FILTERS.md)：尝试/状态组合查询、汇总定位和统计范围。
+
 - [按尝试汇总调用](INDEX_ATTEMPT_SUMMARY.md)：全部精确关联调用统计、未知用量和范围说明。
 
 - [调用尝试与批次定位](CALL_BATCH_POSITION.md)：当前 0017 升级、重试定位和未知字段说明。

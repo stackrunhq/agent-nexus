@@ -8,7 +8,9 @@ from .store import KnowledgeStore
 from .index_call_summary import summarize
 
 
-def detail(database, tenant, app, version, identifier, offset=0, limit=20):
+def detail(
+    database, tenant, app, version, identifier, offset=0, limit=20, attempt=None, call_status=None
+):
     calls = metadata.tables["model_calls"]
     with database.read() as db:
         KnowledgeStore.scope(db, tenant, app, version)
@@ -26,6 +28,18 @@ def detail(database, tenant, app, version, identifier, offset=0, limit=20):
         )
         if task is None:
             raise GatewayError(404, "index_job_not_found", "Index task does not exist")
+        filters = []
+        if attempt is not None:
+            filters.extend(
+                [
+                    calls.c.index_job_id == identifier,
+                    calls.c.index_attempt.is_(None)
+                    if attempt == "unknown"
+                    else calls.c.index_attempt == int(attempt),
+                ]
+            )
+        if call_status is not None:
+            filters.append(calls.c.status == call_status)
         fields = [
             "id",
             "request_id",
@@ -46,6 +60,7 @@ def detail(database, tenant, app, version, identifier, offset=0, limit=20):
             db.execute(
                 select(*(calls.c[field] for field in fields))
                 .where(
+                    *filters,
                     calls.c.tenant_id == tenant,
                     or_(
                         calls.c.index_job_id == identifier,

@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+调用筛选：`knowledge/vector_router.py` 校验 attempt/call_status，`index_details.py` 在分页前过滤；`IndexJobDetails.tsx` 管理条件和分页重置，`IndexAttemptSummary.tsx` 提供汇总定位按钮。
+
 按尝试汇总：`api/src/agent_nexus/knowledge/index_call_summary.py` 执行全任务精确聚合，`index_details.py` 返回；`web/src/app/features/knowledge/IndexAttemptSummary.tsx` 展示，详情组件接入。测试包含 SQLite 与原生 PostgreSQL。
 
 调用尝试/批次：`knowledge/vectors.py` 记录实际调用位置，`index_jobs.py`/`vector_router.py` 传领取尝试快照，`models/usage.py` 校验并落库；迁移 `0017_call_batch.py`，详情 `IndexJobDetails.tsx` 展示分片区间。

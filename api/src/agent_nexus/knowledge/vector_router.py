@@ -76,10 +76,22 @@ def vector_router(get_store, admin_auth, client_auth):
         job_id: str,
         offset: int = Query(0, ge=0, le=100000),
         limit: int = Query(20, ge=1, le=100),
+        attempt: Literal["1", "2", "3", "unknown"] | None = None,
+        call_status: Literal["pending", "succeeded", "failed"] | None = None,
     ):
         from .index_details import detail
 
-        return detail(get_store().database, tenant_id, app_id, version_id, job_id, offset, limit)
+        return detail(
+            get_store().database,
+            tenant_id,
+            app_id,
+            version_id,
+            job_id,
+            offset,
+            limit,
+            attempt,
+            call_status,
+        )
 
     @router.post(admin + "/answers", dependencies=[Depends(admin_auth)])
     async def answer_preview(

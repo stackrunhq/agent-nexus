@@ -38,6 +38,27 @@ def test_attempt_summary_is_unpaged_and_excludes_unconfirmed_and_other_scope(sco
     second = client.get(path, headers=ADMIN, params={"limit": 1, "offset": 20}).json()
     assert first["summary"] == second["summary"]
     summary = first["summary"]
+    filtered = client.get(
+        path, headers=ADMIN, params={"attempt": "2", "call_status": "failed", "limit": 1}
+    ).json()
+    assert [row["id"] for row in filtered["calls"]["data"]] == ["20"]
+    assert filtered["summary"] == summary
+    unknown_page = client.get(path, headers=ADMIN, params={"attempt": "unknown"}).json()
+    assert [row["id"] for row in unknown_page["calls"]["data"]] == ["21"]
+    assert client.get(path, headers=ADMIN, params={"attempt": "3"}).json()["calls"]["data"] == []
+    pending = client.get(
+        path,
+        headers=ADMIN,
+        params={"attempt": "1", "call_status": "pending", "offset": 18, "limit": 1},
+    ).json()
+    assert len(pending["calls"]["data"]) == 1 and not pending["calls"]["has_more"]
+    for params in [
+        {"attempt": "0"},
+        {"attempt": "4"},
+        {"attempt": "banana"},
+        {"call_status": "queued"},
+    ]:
+        assert client.get(path, headers=ADMIN, params=params).status_code == 422
     assert summary["unconfirmed_request_calls"] == 1
     one, two, unknown = summary["attempts"]
     assert (
@@ -91,5 +112,16 @@ def test_attempt_summary_postgres(scope):
             assert result["attempts"][0]["known_input_tokens"] == 0
             assert result["attempts"][-1]["attempt"] is None
             assert result["unconfirmed_request_calls"] == 1
+            filtered = detail(
+                database,
+                task["tenant_id"],
+                task["app_id"],
+                task["version_id"],
+                task["id"],
+                attempt="2",
+                call_status="failed",
+            )
+            assert [row["id"] for row in filtered["calls"]["data"]] == ["20"]
+            assert filtered["summary"] == result
         finally:
             database.close()

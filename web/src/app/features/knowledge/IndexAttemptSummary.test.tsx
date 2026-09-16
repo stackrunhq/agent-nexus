@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import {cleanup,render,screen} from '@testing-library/react';
-import {afterEach,expect,test} from 'vitest';
+import {cleanup,fireEvent,render,screen} from '@testing-library/react';
+import {afterEach,expect,test,vi} from 'vitest';
 import {IndexAttemptSummary, type AttemptSummary} from './IndexAttemptSummary';
 afterEach(cleanup);
 test('distinguishes zero, unknown usage and unconfirmed attribution',()=>{
@@ -13,4 +13,10 @@ test('distinguishes zero, unknown usage and unconfirmed attribution',()=>{
  expect(screen.getByText(/0 ms/)).toBeTruthy();
  rerender(<IndexAttemptSummary value={{...value,attempts:[]}}/>);
  expect(screen.getByText(/暂无精确关联调用/)).toBeTruthy();
+ const select=vi.fn();
+ rerender(<IndexAttemptSummary value={{...value,attempts:[{...value.attempts[0],attempt:2,failed:1}]}} onSelect={select}/>);
+ fireEvent.click(screen.getByText('查看本次失败调用'));
+ expect(select).toHaveBeenCalledWith(2,'failed');
+ fireEvent.click(screen.getByText('查看本次调用'));
+ expect(select).toHaveBeenCalledWith(2,'');
 });

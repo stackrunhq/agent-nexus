@@ -7,24 +7,33 @@ interface Call {id:string; status:string; error:string|null; elapsed_ms:number|n
 interface Detail {task:IndexJob & {request_id:string}; calls:{data:Call[];has_more:boolean};summary?:AttemptSummary}
 export function IndexJobDetails({client, root, id}: {client:AdminClient;root:string;id:string}) {
   const [offset,setOffset]=useState(0);
+  const [attempt,setAttempt]=useState('');
+  const [callStatus,setCallStatus]=useState('');
   const [revision,setRevision]=useState(0);
   const [value,setValue]=useState<Detail>();
   const [error,setError]=useState('');
   useEffect(()=>{
     const controller=new AbortController(); setValue(undefined); setError('');
-    void client.request<Detail>(`${root}/index-jobs/${encodeURIComponent(id)}?offset=${offset}&limit=20`,'GET',undefined,controller.signal)
+    const params=new URLSearchParams({offset:String(offset),limit:'20'});
+    if(attempt)params.set('attempt',attempt);
+    if(callStatus)params.set('call_status',callStatus);
+    void client.request<Detail>(`${root}/index-jobs/${encodeURIComponent(id)}?${params}`,'GET',undefined,controller.signal)
       .then(result=>{if(!controller.signal.aborted)setValue(result);})
       .catch(cause=>{if(!controller.signal.aborted)setError((cause as Error).message);});
     return ()=>controller.abort();
-  },[client,root,id,offset,revision]);
+  },[client,root,id,offset,revision,attempt,callStatus]);
   return <section aria-label="索引任务详情">
     <h5>任务详情与同请求调用</h5>
     <p>新索引调用按任务 ID 精确关联；未记录任务 ID 的调用按同企业、请求、模型和向量能力匹配，不等同精确任务归属。无记录不代表未发生费用，调用成功也不代表索引构建成功。</p>
     <button onClick={()=>{setOffset(0);setRevision(n=>n+1);}}>刷新任务详情</button>
+    <label>调用尝试 <select aria-label="调用尝试" value={attempt} onChange={e=>{setAttempt(e.target.value);setOffset(0);}}><option value="">全部关联方式</option>{[1,2,3].map(n=><option key={n} value={String(n)}>第 {n} 次尝试（精确关联）</option>)}<option value="unknown">尝试未知（精确关联）</option></select></label>
+    <label>调用状态 <select aria-label="调用状态" value={callStatus} onChange={e=>{setCallStatus(e.target.value);setOffset(0);}}><option value="">全部状态</option><option value="pending">待确认</option><option value="succeeded">成功</option><option value="failed">失败</option></select></label>
+    <button onClick={()=>{setAttempt('');setCallStatus('');setOffset(0);}}>清除调用筛选</button>
+    <p>明细按上述条件查询；选定尝试时仅显示精确关联记录。汇总始终覆盖全任务，不随筛选变化。</p>
     {error ? <p role="alert">{error}</p> : !value ? <p>正在加载详情…</p> : <>
       <p>任务 {value.task.id} · {value.task.status} · 尝试 {value.task.attempts} 次</p><p>请求 ID：{value.task.request_id}</p>
       {value.task.status==='failed' && <p>{value.task.error} · {indexFailure(value.task.error).suggestion}</p>}
-      {value.summary && <IndexAttemptSummary value={value.summary}/>}
+      {value.summary && <IndexAttemptSummary value={value.summary} onSelect={(number,status)=>{setAttempt(number===null?'unknown':String(number));setCallStatus(status);setOffset(0);}}/>}
       {!value.calls.data.length && <p>没有匹配的调用记录。</p>}
       {value.calls.data.map(call=><article key={call.id}>
         <p>调用 {call.id} · {call.status} · {call.association==='exact' ? '精确任务关联' : '请求匹配（归属未确认）'}{call.error ? ` · ${call.error}` : ''}</p>
