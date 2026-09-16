@@ -27,6 +27,12 @@ def test_explicit_tasks_survive_duplicate_requests_and_sync_build(scope):
             row["association"] == "exact" and row["index_job_id"] == identifier
             for row in result["calls"]["data"]
         )
+        assert all(
+            row["index_attempt"] == 1
+            and row["index_batch_start"] == 0
+            and row["index_batch_size"] > 0
+            for row in result["calls"]["data"]
+        )
     config = client.app.state.gateway.resolve(alias, "embeddings")
     usage = UsageStore(store.database)
     usage.start(tenants[0]["id"], config, "embeddings", "duplicate")

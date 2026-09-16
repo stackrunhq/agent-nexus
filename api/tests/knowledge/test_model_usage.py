@@ -66,5 +66,5 @@ def test_0007_explicit_upgrade(tmp_path):
         Database(path)
     upgrade(path)
     database = Database(path)
-    assert database.check()["revision"] == "0016"
+    assert database.check()["revision"] == "0017"
     database.close()

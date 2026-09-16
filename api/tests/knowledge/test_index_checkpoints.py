@@ -74,6 +74,21 @@ def test_interrupted_worker_resumes_only_matching_revision(scope, monkeypatch, c
         assert db.execute(checkpoints.select()).first() is None
         row = db.execute(jobs.select().where(jobs.c.id == task["id"])).mappings().one()
         assert row["status"] == "succeeded" and row["attempts"] == 2
+    details = client.get(
+        root + "/index-jobs/" + task["id"], headers=ADMIN, params={"limit": 100}
+    ).json()["calls"]["data"]
+    first = [item for item in details if item["index_attempt"] == 1]
+    resumed = sorted(
+        [item for item in details if item["index_attempt"] == 2],
+        key=lambda item: item["index_batch_start"],
+    )
+    assert (
+        len(first) == 1
+        and first[0]["index_batch_start"] == 0
+        and first[0]["index_batch_size"] == 16
+    )
+    assert resumed[0]["index_batch_start"] == (16 if change == "none" else 0)
+    assert sum(item["index_batch_size"] for item in resumed) == sum(calls)
 
 
 def test_reclaimed_worker_cannot_change_checkpoint(scope):
@@ -108,5 +123,5 @@ def test_0010_requires_explicit_upgrade(tmp_path):
         Database(path)
     upgrade(path)
     database = Database(path)
-    assert database.check()["revision"] == "0016"
+    assert database.check()["revision"] == "0017"
     database.close()

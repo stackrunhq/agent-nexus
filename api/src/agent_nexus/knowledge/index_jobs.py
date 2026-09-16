@@ -305,6 +305,7 @@ async def run_once(database, gateway):
             on_save=lambda db: store.finish(db, task),
             checkpoint=IndexCheckpoint(database, task),
             index_job_id=task["id"],
+            index_attempt=task["attempts"],
         )
     except Exception as exc:
         error = exc.code if isinstance(exc, GatewayError) else "index_worker_failed"

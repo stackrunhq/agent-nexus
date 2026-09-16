@@ -39,7 +39,11 @@ def upgrade():
     if inspector.has_table(table.name):
         actual = {column["name"] for column in inspector.get_columns(table.name)}
         expected = set(table.columns.keys())
-        if db.dialect.name != "sqlite" or actual not in (expected, expected | {"index_job_id"}):
+        if db.dialect.name != "sqlite" or actual not in (
+            expected,
+            expected | {"index_job_id"},
+            expected | {"index_job_id", "index_attempt", "index_batch_start", "index_batch_size"},
+        ):
             raise RuntimeError("Existing model usage schema does not match migration")
     else:
         table.create(db)

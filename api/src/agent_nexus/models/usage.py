@@ -60,7 +60,28 @@ class UsageStore:
             )
             return self.policy(db, tenant)
 
-    def start(self, tenant, config, capability, request_id, index_job_id=None):
+    def start(
+        self,
+        tenant,
+        config,
+        capability,
+        request_id,
+        index_job_id=None,
+        index_attempt=None,
+        index_batch_start=None,
+        index_batch_size=None,
+    ):
+        position = (index_attempt, index_batch_start, index_batch_size)
+        if any(value is not None for value in position) and (
+            index_job_id is None
+            or not all(type(value) is int for value in position)
+            or not 1 <= index_attempt <= 3
+            or not 0 <= index_batch_start < 128
+            or index_batch_start % 16
+            or not 1 <= index_batch_size <= 16
+            or index_batch_start + index_batch_size > 128
+        ):
+            raise GatewayError(422, "invalid_index_batch", "Invalid index invocation position")
         identifier = str(uuid4())
         with self.database.write("model-usage:" + tenant) as db:
             TenantStore.require(db, tenant)
@@ -92,6 +113,9 @@ class UsageStore:
                     tenant_id=tenant,
                     request_id=request_id,
                     index_job_id=index_job_id,
+                    index_attempt=index_attempt,
+                    index_batch_start=index_batch_start,
+                    index_batch_size=index_batch_size,
                     model=config.alias,
                     model_fingerprint=ModelStore.etag(config),
                     capability=capability,

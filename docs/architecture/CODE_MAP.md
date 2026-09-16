@@ -1,5 +1,7 @@
 # 顶层目录与代码导航
 
+调用尝试/批次：`knowledge/vectors.py` 记录实际调用位置，`index_jobs.py`/`vector_router.py` 传领取尝试快照，`models/usage.py` 校验并落库；迁移 `0017_call_batch.py`，详情 `IndexJobDetails.tsx` 展示分片区间。
+
 调用任务关联：`knowledge/index_jobs.py` 与 `vector_router.py` 传任务 ID，经 `vectors.py`、`models/gateway.py` 至 `models/usage.py` 校验写账本；`knowledge/index_details.py` 区分 exact/request_match；存储迁移为 `0016_call_task.py`。
 
 任务详情查询：`api/src/agent_nexus/knowledge/index_details.py`；路由在 `vector_router.py`；页面 `web/src/app/features/knowledge/IndexJobDetails.tsx`，入口位于 `IndexJobHistory.tsx`。见 [接口说明](../INDEX_DETAILS.md)。

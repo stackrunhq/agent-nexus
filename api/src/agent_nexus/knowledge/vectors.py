@@ -160,6 +160,7 @@ class VectorService:
         on_save=None,
         checkpoint=None,
         index_job_id=None,
+        index_attempt=None,
     ):
         native = pgvector_backend.enabled(self.database)
         if native:
@@ -199,7 +200,20 @@ class VectorService:
                         request,
                         request_id,
                         tenant_id=tenant,
-                        **({"index_job_id": index_job_id} if index_job_id else {}),
+                        **(
+                            {
+                                "index_job_id": index_job_id,
+                                "index_call": {
+                                    "index_attempt": index_attempt,
+                                    "index_batch_start": start,
+                                    "index_batch_size": len(batch),
+                                },
+                            }
+                            if index_job_id and index_attempt is not None
+                            else {"index_job_id": index_job_id}
+                            if index_job_id
+                            else {}
+                        ),
                     )
                     if dimensions is not None and result.dimensions != dimensions:
                         raise GatewayError(

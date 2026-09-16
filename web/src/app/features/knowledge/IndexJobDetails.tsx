@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {AdminClient} from '../../shared/client';
 import {type IndexJob} from './IndexJobProgress';
 import {indexFailure} from './indexFailure';
-interface Call {id:string; status:string; error:string|null; elapsed_ms:number|null; input_tokens:number|null; output_tokens:number|null; association?:'exact'|'request_match'}
+interface Call {id:string; status:string; error:string|null; elapsed_ms:number|null; input_tokens:number|null; output_tokens:number|null; association?:'exact'|'request_match';index_attempt?:number|null;index_batch_start?:number|null;index_batch_size?:number|null}
 interface Detail {task:IndexJob & {request_id:string}; calls:{data:Call[];has_more:boolean}}
 export function IndexJobDetails({client, root, id}: {client:AdminClient;root:string;id:string}) {
   const [offset,setOffset]=useState(0);
@@ -27,6 +27,7 @@ export function IndexJobDetails({client, root, id}: {client:AdminClient;root:str
       {value.calls.data.map(call=><article key={call.id}>
         <p>调用 {call.id} · {call.status} · {call.association==='exact' ? '精确任务关联' : '请求匹配（归属未确认）'}{call.error ? ` · ${call.error}` : ''}</p>
         <p>耗时 {call.elapsed_ms ?? '未知'} ms · 输入 token {call.input_tokens ?? '未知'} · 输出 token {call.output_tokens ?? '未知'}</p>
+        <p>{call.index_attempt != null && call.index_batch_start != null && call.index_batch_size != null ? `第 ${call.index_attempt} 次尝试 · 分片 ${call.index_batch_start+1}–${call.index_batch_start+call.index_batch_size}（${call.index_batch_size} 个）` : '尝试与批次位置未知'}</p>
       </article>)}
     </>}
     <button disabled={!value || offset===0} onClick={()=>setOffset(n=>n-20)}>上一页关联调用</button>

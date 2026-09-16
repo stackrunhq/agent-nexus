@@ -98,7 +98,15 @@ class Gateway:
         return await self.metered(config, request, request_id, tenant_id, "chat", self._chat_config)
 
     async def metered(
-        self, config, request, request_id, tenant_id, capability, invoke, index_job_id=None
+        self,
+        config,
+        request,
+        request_id,
+        tenant_id,
+        capability,
+        invoke,
+        index_job_id=None,
+        index_call=None,
     ):
         if tenant_id is None:
             return await invoke(config, request, request_id)
@@ -106,7 +114,13 @@ class Gateway:
 
         store = UsageStore(self.store.database)
         identifier = await run_in_threadpool(
-            store.start, tenant_id, config, capability, request_id, index_job_id
+            store.start,
+            tenant_id,
+            config,
+            capability,
+            request_id,
+            index_job_id,
+            **(index_call or {}),
         )
         started = time.monotonic()
         try:
@@ -185,10 +199,23 @@ class Gateway:
         return await self.embed_config(config, request, request_id, tenant_id=tenant_id)
 
     async def embed_config(
-        self, config, request: EmbeddingRequest, request_id: str, tenant_id=None, index_job_id=None
+        self,
+        config,
+        request: EmbeddingRequest,
+        request_id: str,
+        tenant_id=None,
+        index_job_id=None,
+        index_call=None,
     ):
         return await self.metered(
-            config, request, request_id, tenant_id, "embeddings", self._embed_config, index_job_id
+            config,
+            request,
+            request_id,
+            tenant_id,
+            "embeddings",
+            self._embed_config,
+            index_job_id,
+            index_call,
         )
 
     async def _embed_config(self, config, request: EmbeddingRequest, request_id: str):
